@@ -1,10 +1,3 @@
-//
-//  Persistence.swift
-//  balancier
-//
-//  Created by failb on 07.10.2026.
-//
-
 import CoreData
 
 struct PersistenceController {
@@ -13,19 +6,7 @@ struct PersistenceController {
     @MainActor
     static let preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
-        let viewContext = result.container.viewContext
-        for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-        }
-        do {
-            try viewContext.save()
-        } catch {
-            // Replace this implementation with code to handle the error appropriately.
-            // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-            let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-        }
+        SeedData.populate(in: result.container.viewContext)
         return result
     }()
 
@@ -36,22 +17,109 @@ struct PersistenceController {
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+        container.loadPersistentStores { _, error in
             if let error = error as NSError? {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-
-                /*
-                 Typical reasons for an error here include:
-                 * The parent directory does not exist, cannot be created, or disallows writing.
-                 * The persistent store is not accessible, due to permissions or data protection when the device is locked.
-                 * The device is out of space.
-                 * The store could not be migrated to the current model version.
-                 Check the error message to determine what the actual problem was.
-                 */
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
-        })
+        }
         container.viewContext.automaticallyMergesChangesFromParent = true
+
+        if !inMemory {
+            seedDefaultsIfNeeded(in: container.viewContext)
+        }
+    }
+
+    private func seedDefaultsIfNeeded(in context: NSManagedObjectContext) {
+        let request = Account.fetchRequest()
+        guard (try? context.count(for: request)) == 0 else { return }
+        SeedData.populate(in: context)
+    }
+
+    func save() {
+        let ctx = container.viewContext
+        guard ctx.hasChanges else { return }
+        try? ctx.save()
+    }
+}
+
+enum SeedData {
+    static func populate(in context: NSManagedObjectContext) {
+        addAccounts(to: context)
+        addCategories(to: context)
+        try? context.save()
+    }
+
+    private static func addAccounts(to context: NSManagedObjectContext) {
+        let data: [(String, String, String, String)] = [
+            ("Тинькофф", "creditcard", "#FFDD00", AccountType.debit.rawValue),
+            ("Альфа", "creditcard", "#EF3124", AccountType.debit.rawValue),
+            ("Наличка", "banknote", "#4CAF50", AccountType.cash.rawValue),
+            ("ВТБ", "creditcard", "#009FDF", AccountType.debit.rawValue),
+        ]
+        for (i, (name, icon, color, type)) in data.enumerated() {
+            let a = Account(context: context)
+            a.id = UUID()
+            a.name = name
+            a.iconName = icon
+            a.colorHex = color
+            a.accountType = type
+            a.initialBalance = 0
+            a.currency = "RUB"
+            a.sortOrder = Int32(i)
+            a.createdAt = Date()
+            a.isArchived = false
+        }
+    }
+
+    private static func addCategories(to context: NSManagedObjectContext) {
+        let expense: [(String, String, String)] = [
+            ("Еда", "fork.knife", "#FF6B6B"),
+            ("Продукты", "cart", "#FF8C42"),
+            ("Транспорт", "tram", "#4ECDC4"),
+            ("Поездки", "airplane", "#45B7D1"),
+            ("Машина", "car", "#96CEB4"),
+            ("Услуги", "wrench.and.screwdriver", "#DDA0DD"),
+            ("Одежда", "tshirt", "#F7DC6F"),
+            ("Кредиты", "creditcard", "#E74C3C"),
+            ("Подписки", "star", "#9B59B6"),
+            ("Развлечения", "gamecontroller", "#1ABC9C"),
+            ("Здоровье", "heart.text.square", "#E91E63"),
+            ("Аптеки", "pills", "#00BCD4"),
+            ("Подарки", "gift", "#FF5722"),
+            ("Хозтовары", "house", "#795548"),
+            ("Бизнес", "briefcase", "#607D8B"),
+            ("Электроника", "iphone", "#2196F3"),
+            ("Связь", "phone", "#4CAF50"),
+            ("Физкультура", "figure.run", "#FF9800"),
+            ("За квартиру", "building.2", "#3F51B5"),
+        ]
+        let income: [(String, String, String)] = [
+            ("Зарплата", "dollarsign.circle", "#4CAF50"),
+            ("Фриланс", "laptopcomputer", "#2196F3"),
+            ("Кешбэк", "percent", "#FF9800"),
+            ("Возврат", "arrow.uturn.left", "#9C27B0"),
+            ("Другое", "ellipsis.circle", "#607D8B"),
+        ]
+
+        for (i, (name, icon, color)) in expense.enumerated() {
+            let c = Category(context: context)
+            c.id = UUID()
+            c.name = name
+            c.categoryType = CategoryType.expense.rawValue
+            c.iconName = icon
+            c.colorHex = color
+            c.sortOrder = Int32(i)
+            c.isArchived = false
+        }
+        for (i, (name, icon, color)) in income.enumerated() {
+            let c = Category(context: context)
+            c.id = UUID()
+            c.name = name
+            c.categoryType = CategoryType.income.rawValue
+            c.iconName = icon
+            c.colorHex = color
+            c.sortOrder = Int32(i)
+            c.isArchived = false
+        }
     }
 }
