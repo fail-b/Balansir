@@ -14,16 +14,20 @@ final class AddEntryViewModel {
     var date = Date()
     var errorMessage: String?
 
+    private let editingEntry: EntryModel?
+    private var hasLoaded = false
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
     private let entryRepo: any EntryRepository
 
-    init(accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository) {
+    init(entry: EntryModel? = nil, accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository) {
+        self.editingEntry = entry
         self.accountRepo = accountRepo
         self.categoryRepo = categoryRepo
         self.entryRepo = entryRepo
     }
 
+    var isEditing: Bool { editingEntry != nil }
     var amount: Decimal { Decimal(string: amountString) ?? 0 }
 
     var filteredCategories: [CategoryModel] {
@@ -45,23 +49,44 @@ final class AddEntryViewModel {
             let (fetchedAccounts, fetchedCategories) = try await (accs, cats)
             accounts = fetchedAccounts
             categories = fetchedCategories
-            if selectedAccount == nil { selectedAccount = accounts.first }
+
+            if !hasLoaded {
+                hasLoaded = true
+                if let entry = editingEntry {
+                    selectedType = entry.type
+                    amountString = "\(entry.amount)"
+                    date = entry.date
+                    note = entry.note ?? ""
+                    switch entry.type {
+                    case .expense:
+                        selectedAccount = entry.fromAccount.flatMap { a in accounts.first { $0.id == a.id } }
+                    case .income:
+                        selectedAccount = entry.toAccount.flatMap { a in accounts.first { $0.id == a.id } }
+                    case .transfer:
+                        selectedAccount = entry.fromAccount.flatMap { a in accounts.first { $0.id == a.id } }
+                        selectedToAccount = entry.toAccount.flatMap { a in accounts.first { $0.id == a.id } }
+                    }
+                    selectedCategory = entry.category.flatMap { c in categories.first { $0.id == c.id } }
+                } else {
+                    selectedAccount = accounts.first
+                }
+            }
         } catch { errorMessage = error.localizedDescription }
     }
 
     func save() async {
         let now = Date()
         let entry = EntryModel(
-            id: UUID(),
+            id: editingEntry?.id ?? UUID(),
             date: date,
             type: selectedType,
             amount: amount,
             currency: "RUB",
             note: note.isEmpty ? nil : note,
-            tags: nil,
-            isRecurring: false,
+            tags: editingEntry?.tags,
+            isRecurring: editingEntry?.isRecurring ?? false,
             isSoftDeleted: false,
-            createdAt: now,
+            createdAt: editingEntry?.createdAt ?? now,
             updatedAt: now,
             fromAccount: nil,
             toAccount: nil,

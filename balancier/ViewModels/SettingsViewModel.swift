@@ -6,6 +6,7 @@ final class SettingsViewModel {
     private(set) var categories: [CategoryModel] = []
     private(set) var balances: [UUID: Decimal] = [:]
     var selectedCategoryType = CategoryType.expense
+    var errorMessage: String?
 
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
@@ -29,28 +30,29 @@ final class SettingsViewModel {
             let (accs, cats, entries) = try await (a, c, e)
             accounts = accs
             categories = cats
-            balances = computeBalances(accounts: accs, entries: entries)
-        } catch {}
+            balances = BalanceService.computeBalances(accounts: accs, entries: entries)
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func archive(_ account: AccountModel) async {
         do {
             try await accountRepo.archive(account.id)
             accounts.removeAll { $0.id == account.id }
-        } catch {}
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    func archive(_ category: CategoryModel) async {
+        do {
+            try await categoryRepo.archive(category.id)
+            categories.removeAll { $0.id == category.id }
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func makeAccountFormViewModel(for account: AccountModel?) -> AccountFormViewModel {
         AccountFormViewModel(account: account, accountRepo: accountRepo)
     }
 
-    private func computeBalances(accounts: [AccountModel], entries: [EntryModel]) -> [UUID: Decimal] {
-        var result: [UUID: Decimal] = [:]
-        for a in accounts { result[a.id] = a.initialBalance }
-        for e in entries {
-            if let id = e.fromAccount?.id { result[id, default: 0] -= e.amount }
-            if let id = e.toAccount?.id { result[id, default: 0] += e.amount }
-        }
-        return result
+    func makeCategoryFormViewModel(for category: CategoryModel?) -> CategoryFormViewModel {
+        CategoryFormViewModel(category: category, categoryRepo: categoryRepo)
     }
 }

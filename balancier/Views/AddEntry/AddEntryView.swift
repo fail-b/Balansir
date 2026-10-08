@@ -38,18 +38,31 @@ struct AddEntryView: View {
                     .padding(.top, Theme.Spacing.s)
                     .padding(.bottom, Theme.Spacing.xs)
             }
-            .navigationTitle("Новая операция")
+            .navigationTitle(viewModel.isEditing ? "Редактировать операцию" : "Новая операция")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Отмена") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Сохранить") { Task { await viewModel.save(); dismiss() } }
+                    Button("Сохранить") {
+                        Task {
+                            await viewModel.save()
+                            if viewModel.errorMessage == nil { dismiss() }
+                        }
+                    }
                         .fontWeight(.semibold)
                         .disabled(!viewModel.canSave)
                 }
             }
         }
         .task { await viewModel.load() }
+        .alert("Ошибка", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 
     private var typeColor: Color {

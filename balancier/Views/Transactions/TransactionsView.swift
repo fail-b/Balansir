@@ -5,6 +5,8 @@ struct TransactionsView: View {
 
     @State private var showingAddEntry = false
     @State private var addEntryVM: AddEntryViewModel?
+    @State private var showingEditEntry = false
+    @State private var editEntryVM: AddEntryViewModel?
 
     var body: some View {
         NavigationStack {
@@ -22,6 +24,11 @@ struct TransactionsView: View {
                                 ForEach(group.entries) { entry in
                                     EntryRowView(entry: entry)
                                         .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 16))
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            editEntryVM = viewModel.makeEditEntryViewModel(for: entry)
+                                            showingEditEntry = true
+                                        }
                                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                             Button(role: .destructive) {
                                                 Task { await viewModel.delete(entry) }
@@ -64,7 +71,20 @@ struct TransactionsView: View {
                     AddEntryView(viewModel: vm)
                 }
             }
+            .sheet(isPresented: $showingEditEntry, onDismiss: { Task { await viewModel.load() } }) {
+                if let vm = editEntryVM {
+                    AddEntryView(viewModel: vm)
+                }
+            }
             .task { await viewModel.load() }
+            .alert("Ошибка", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 }

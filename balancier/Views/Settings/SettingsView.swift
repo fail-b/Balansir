@@ -8,6 +8,11 @@ struct SettingsView: View {
     @State private var addAccountVM: AccountFormViewModel?
     @State private var editAccountVM: AccountFormViewModel?
 
+    @State private var showingAddCategory = false
+    @State private var showingEditCategory = false
+    @State private var addCategoryVM: CategoryFormViewModel?
+    @State private var editCategoryVM: CategoryFormViewModel?
+
     var body: some View {
         NavigationStack {
             List {
@@ -48,26 +53,58 @@ struct SettingsView: View {
                         HStack(spacing: Theme.Spacing.m) {
                             ZStack {
                                 Circle()
-                                    .fill((Color(hex: category.colorHex) ?? .orange).opacity(0.15))
+                                    .fill((Color(hex: category.colorHex) ?? Theme.Colors.fallback).opacity(0.15))
                                     .frame(width: 32, height: 32)
                                 AppIcon.image(named: category.iconName)
                                     .font(.system(size: 14))
-                                    .foregroundStyle(Color(hex: category.colorHex) ?? .orange)
+                                    .foregroundStyle(Color(hex: category.colorHex) ?? Theme.Colors.fallback)
                             }
                             Text(category.name).font(.callout)
                         }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            editCategoryVM = viewModel.makeCategoryFormViewModel(for: category)
+                            showingEditCategory = true
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                Task { await viewModel.archive(category) }
+                            } label: {
+                                Label("Скрыть", systemImage: "archivebox")
+                            }
+                        }
+                    }
+                    Button {
+                        addCategoryVM = viewModel.makeCategoryFormViewModel(for: nil)
+                        showingAddCategory = true
+                    } label: {
+                        Label("Добавить категорию", systemImage: "plus.circle")
                     }
                 } header: { Text("Категории") }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Счета")
+            .navigationTitle("Настройки")
             .sheet(isPresented: $showingAddAccount, onDismiss: { Task { await viewModel.load() } }) {
                 if let vm = addAccountVM { AccountFormView(viewModel: vm) }
             }
             .sheet(isPresented: $showingEditAccount, onDismiss: { Task { await viewModel.load() } }) {
                 if let vm = editAccountVM { AccountFormView(viewModel: vm) }
             }
+            .sheet(isPresented: $showingAddCategory, onDismiss: { Task { await viewModel.load() } }) {
+                if let vm = addCategoryVM { CategoryFormView(viewModel: vm) }
+            }
+            .sheet(isPresented: $showingEditCategory, onDismiss: { Task { await viewModel.load() } }) {
+                if let vm = editCategoryVM { CategoryFormView(viewModel: vm) }
+            }
             .task { await viewModel.load() }
+            .alert("Ошибка", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 }
