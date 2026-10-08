@@ -2,7 +2,8 @@ import Foundation
 
 extension Category {
     func toModel() -> CategoryModel {
-        CategoryModel(
+        let now = Date()
+        return CategoryModel(
             id: id,
             name: name,
             categoryType: CategoryType(rawValue: categoryType) ?? .expense,
@@ -10,7 +11,8 @@ extension Category {
             iconName: iconName,
             sortOrder: sortOrder,
             isArchived: isArchived,
-            createdAt: Date()
+            createdAt: createdAt ?? now,
+            updatedAt: updatedAt ?? createdAt ?? now
         )
     }
 
@@ -21,5 +23,6 @@ extension Category {
         iconName = model.iconName
         sortOrder = model.sortOrder
         isArchived = model.isArchived
+        updatedAt = Date()
     }
 }

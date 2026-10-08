@@ -26,6 +26,7 @@ final class AccountFormViewModel {
     var isEditing: Bool { editingAccount != nil }
     var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
     var initialBalance: Decimal { Decimal(string: initialBalanceString) ?? 0 }
+    var errorMessage: String?
 
     func save(existingCount: Int) async {
         let model = AccountModel(
@@ -38,8 +39,9 @@ final class AccountFormViewModel {
             accountType: selectedType,
             sortOrder: editingAccount?.sortOrder ?? Int32(existingCount),
             isArchived: false,
-            createdAt: editingAccount?.createdAt ?? Date()
+            createdAt: editingAccount?.createdAt ?? Date(),
+            updatedAt: Date()
         )
-        do { try await accountRepo.save(model) } catch {}
+        do { try await accountRepo.save(model) } catch { errorMessage = error.localizedDescription }
     }
 }

@@ -12,6 +12,7 @@ final class AddEntryViewModel {
     var selectedCategory: CategoryModel?
     var note = ""
     var date = Date()
+    var errorMessage: String?
 
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
@@ -45,10 +46,11 @@ final class AddEntryViewModel {
             accounts = fetchedAccounts
             categories = fetchedCategories
             if selectedAccount == nil { selectedAccount = accounts.first }
-        } catch {}
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func save() async {
+        let now = Date()
         let entry = EntryModel(
             id: UUID(),
             date: date,
@@ -58,7 +60,9 @@ final class AddEntryViewModel {
             note: note.isEmpty ? nil : note,
             tags: nil,
             isRecurring: false,
-            createdAt: Date(),
+            isSoftDeleted: false,
+            createdAt: now,
+            updatedAt: now,
             fromAccount: nil,
             toAccount: nil,
             category: nil
@@ -66,7 +70,7 @@ final class AddEntryViewModel {
         let from: AccountModel? = selectedType == .income ? nil : selectedAccount
         let to: AccountModel? = selectedType == .expense ? nil : (selectedType == .income ? selectedAccount : selectedToAccount)
         let cat: CategoryModel? = selectedType == .transfer ? nil : selectedCategory
-        do { try await entryRepo.save(entry, fromAccount: from, toAccount: to, category: cat) } catch {}
+        do { try await entryRepo.save(entry, fromAccount: from, toAccount: to, category: cat) } catch { errorMessage = error.localizedDescription }
     }
 }
 

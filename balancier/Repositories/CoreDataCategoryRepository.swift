@@ -23,6 +23,7 @@ final class CoreDataCategoryRepository: CategoryRepository {
             let entity = (try self.context.fetch(request).first) ?? Category(context: self.context)
             if entity.isInserted {
                 entity.id = category.id
+                entity.createdAt = category.createdAt
             }
             entity.update(from: category)
             try self.context.save()

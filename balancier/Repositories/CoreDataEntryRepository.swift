@@ -11,6 +11,7 @@ final class CoreDataEntryRepository: EntryRepository {
         try await context.perform {
             let request = Entry.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+            request.predicate = NSPredicate(format: "isSoftDeleted == NO")
             return try self.context.fetch(request).map { $0.toModel() }
         }
     }
@@ -58,7 +59,8 @@ final class CoreDataEntryRepository: EntryRepository {
             let request = Entry.fetchRequest()
             request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
             if let entity = try self.context.fetch(request).first {
-                self.context.delete(entity)
+                entity.isSoftDeleted = true
+                entity.updatedAt = Date()
                 try self.context.save()
             }
         }

@@ -10,7 +10,9 @@ struct EntryModel: Identifiable {
     var note: String?
     var tags: String?
     var isRecurring: Bool
+    var isSoftDeleted: Bool
     let createdAt: Date
+    let updatedAt: Date
     var fromAccount: AccountModel?
     var toAccount: AccountModel?
     var category: CategoryModel?

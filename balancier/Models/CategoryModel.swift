@@ -9,4 +9,5 @@ struct CategoryModel: Identifiable, Hashable {
     var sortOrder: Int32
     var isArchived: Bool
     let createdAt: Date
+    let updatedAt: Date
 }

@@ -11,7 +11,9 @@ public class Entry: NSManagedObject {
     @NSManaged public var note: String?
     @NSManaged public var tags: String?
     @NSManaged public var isRecurring: Bool
+    @NSManaged public var isSoftDeleted: Bool
     @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var fromAccount: Account?
     @NSManaged public var toAccount: Account?
     @NSManaged public var category: Category?

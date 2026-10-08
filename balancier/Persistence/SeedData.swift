@@ -25,6 +25,7 @@ enum SeedData {
             a.currency = "RUB"
             a.sortOrder = Int32(i)
             a.createdAt = Date()
+            a.updatedAt = Date()
             a.isArchived = false
         }
     }
@@ -67,6 +68,8 @@ enum SeedData {
             c.iconName = icon
             c.colorHex = color
             c.sortOrder = Int32(i)
+            c.createdAt = Date()
+            c.updatedAt = Date()
             c.isArchived = false
         }
         for (i, (name, icon, color)) in income.enumerated() {
@@ -77,6 +80,8 @@ enum SeedData {
             c.iconName = icon
             c.colorHex = color
             c.sortOrder = Int32(i)
+            c.createdAt = Date()
+            c.updatedAt = Date()
             c.isArchived = false
         }
     }

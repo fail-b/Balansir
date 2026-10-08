@@ -9,6 +9,8 @@ public class Category: NSManagedObject {
     @NSManaged public var iconName: String
     @NSManaged public var colorHex: String
     @NSManaged public var sortOrder: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var isArchived: Bool
     @NSManaged public var entries: NSSet?
 

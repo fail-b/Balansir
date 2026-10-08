@@ -12,7 +12,9 @@ extension Entry {
             note: note,
             tags: tags,
             isRecurring: isRecurring,
+            isSoftDeleted: isSoftDeleted,
             createdAt: createdAt,
+            updatedAt: updatedAt ?? createdAt,
             fromAccount: fromAccount?.toModel(),
             toAccount: toAccount?.toModel(),
             category: category?.toModel()
@@ -27,5 +29,7 @@ extension Entry {
         note = model.note
         tags = model.tags
         isRecurring = model.isRecurring
+        isSoftDeleted = model.isSoftDeleted
+        updatedAt = Date()
     }
 }

@@ -12,7 +12,8 @@ extension Account {
             accountType: AccountType(rawValue: accountType) ?? .debit,
             sortOrder: sortOrder,
             isArchived: isArchived,
-            createdAt: createdAt
+            createdAt: createdAt,
+            updatedAt: updatedAt ?? createdAt
         )
     }
 
@@ -25,5 +26,6 @@ extension Account {
         accountType = model.accountType.rawValue
         sortOrder = model.sortOrder
         isArchived = model.isArchived
+        updatedAt = Date()
     }
 }

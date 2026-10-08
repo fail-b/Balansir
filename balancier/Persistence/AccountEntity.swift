@@ -12,6 +12,7 @@ public class Account: NSManagedObject {
     @NSManaged public var accountType: String
     @NSManaged public var sortOrder: Int32
     @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var isArchived: Bool
     @NSManaged public var outgoingEntries: NSSet?
     @NSManaged public var incomingEntries: NSSet?
