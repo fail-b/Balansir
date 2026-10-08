@@ -33,6 +33,7 @@ final class MockAccountRepository: AccountRepository {
 final class MockCategoryRepository: CategoryRepository {
     var categories: [CategoryModel] = []
     var shouldThrow = false
+    var savedCategory: CategoryModel?
 
     func fetchAll() async throws -> [CategoryModel] {
         if shouldThrow { throw NSError(domain: "test", code: 1) }
@@ -41,6 +42,7 @@ final class MockCategoryRepository: CategoryRepository {
 
     func save(_ category: CategoryModel) async throws {
         if shouldThrow { throw NSError(domain: "test", code: 1) }
+        savedCategory = category
     }
 
     func archive(_ id: UUID) async throws {
