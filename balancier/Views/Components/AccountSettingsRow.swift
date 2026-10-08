@@ -8,7 +8,7 @@ struct AccountSettingsRow: View {
         HStack(spacing: Theme.Spacing.m) {
             ZStack {
                 RoundedRectangle(cornerRadius: Theme.Radius.s)
-                    .fill(Color(hex: account.colorHex) ?? .blue)
+                    .fill(Color(hex: account.colorHex) ?? Theme.Colors.fallback)
                     .frame(width: 36, height: 36)
                 AppIcon.image(named: account.iconName)
                     .font(.system(size: 16))

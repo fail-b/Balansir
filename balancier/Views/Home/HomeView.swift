@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    var viewModel: HomeViewModel
+    @Bindable var viewModel: HomeViewModel
 
     @State private var showingAddEntry = false
     @State private var addEntryVM: AddEntryViewModel?
@@ -40,6 +40,14 @@ struct HomeView: View {
                 }
             }
             .task { await viewModel.load() }
+            .alert("Ошибка", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 

@@ -22,7 +22,7 @@ struct AccountCard: View {
         .padding(Theme.Spacing.l)
         .frame(width: 140, height: 90)
         .background(
-            (Color(hex: account.colorHex) ?? .blue).gradient,
+            (Color(hex: account.colorHex) ?? Theme.Colors.fallback).gradient,
             in: RoundedRectangle(cornerRadius: Theme.Radius.l)
         )
     }

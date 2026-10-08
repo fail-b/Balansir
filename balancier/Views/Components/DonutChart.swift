@@ -21,7 +21,7 @@ struct DonutChart: View {
             let end = (cumulative as NSDecimalNumber).doubleValue / totalDouble
             result.append(Slice(
                 id: item.category.id,
-                color: Color(hex: item.category.colorHex) ?? .orange,
+                color: Color(hex: item.category.colorHex) ?? Theme.Colors.fallback,
                 startAngle: .degrees(start * 360 - 90),
                 endAngle: .degrees(end * 360 - 90)
             ))

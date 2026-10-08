@@ -16,7 +16,7 @@ struct AccountPillButton: View {
             .padding(.horizontal, 14)
             .padding(.vertical, Theme.Spacing.s)
             .background(
-                isSelected ? (Color(hex: account.colorHex) ?? .blue) : Color(.systemGray5),
+                isSelected ? (Color(hex: account.colorHex) ?? Theme.Colors.fallback) : Color(.systemGray5),
                 in: Capsule()
             )
             .foregroundStyle(isSelected ? .white : .primary)

@@ -4,6 +4,7 @@ import Foundation
 final class StatisticsViewModel {
     private(set) var entries: [EntryModel] = []
     var selectedPeriod = StatsPeriod.month
+    var errorMessage: String?
 
     private let entryRepo: any EntryRepository
 
@@ -35,7 +36,7 @@ final class StatisticsViewModel {
     }
 
     func load() async {
-        do { entries = try await entryRepo.fetchAll() } catch {}
+        do { entries = try await entryRepo.fetchAll() } catch { errorMessage = error.localizedDescription }
     }
 }
 

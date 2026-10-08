@@ -36,11 +36,22 @@ struct AccountFormView: View {
             }
             .navigationTitle(viewModel.isEditing ? "Редактировать счёт" : "Новый счёт")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Ошибка", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Отмена") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Сохранить") {
-                        Task { await viewModel.save(existingCount: 0); dismiss() }
+                        Task {
+                            await viewModel.save(existingCount: 0)
+                            if viewModel.errorMessage == nil { dismiss() }
+                        }
                     }
                     .fontWeight(.semibold)
                     .disabled(!viewModel.canSave)
@@ -54,7 +65,7 @@ struct AccountFormView: View {
             ForEach(Theme.Palette.hexColors, id: \.self) { hex in
                 Button { viewModel.selectedColorHex = hex } label: {
                     Circle()
-                        .fill(Color(hex: hex) ?? .blue)
+                        .fill(Color(hex: hex) ?? Theme.Colors.fallback)
                         .frame(height: 36)
                         .overlay {
                             if viewModel.selectedColorHex == hex {
@@ -73,7 +84,7 @@ struct AccountFormView: View {
                 Button { viewModel.selectedIcon = icon } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: Theme.Radius.s)
-                            .fill(viewModel.selectedIcon == icon ? (Color(hex: viewModel.selectedColorHex) ?? .blue) : Color(.systemGray5))
+                            .fill(viewModel.selectedIcon == icon ? (Color(hex: viewModel.selectedColorHex) ?? Theme.Colors.fallback) : Color(.systemGray5))
                             .frame(height: 40)
                         Image(systemName: icon).font(.system(size: 17))
                             .foregroundStyle(viewModel.selectedIcon == icon ? .white : .primary)
@@ -88,7 +99,7 @@ struct AccountFormView: View {
         HStack(spacing: Theme.Spacing.s) {
             ZStack {
                 RoundedRectangle(cornerRadius: Theme.Radius.s)
-                    .fill(Color(hex: viewModel.selectedColorHex) ?? .blue)
+                    .fill(Color(hex: viewModel.selectedColorHex) ?? Theme.Colors.fallback)
                     .frame(width: 36, height: 36)
                 Image(systemName: viewModel.selectedIcon).font(.system(size: 16)).foregroundStyle(.white)
             }

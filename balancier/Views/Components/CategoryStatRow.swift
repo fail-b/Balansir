@@ -5,7 +5,7 @@ struct CategoryStatRow: View {
     let amount: Decimal
     let total: Decimal
 
-    private var color: Color { Color(hex: category.colorHex) ?? .orange }
+    private var color: Color { Color(hex: category.colorHex) ?? Theme.Colors.fallback }
     private var percentage: Double {
         total > 0 ? NSDecimalNumber(decimal: amount / total).doubleValue : 0
     }

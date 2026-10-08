@@ -5,7 +5,7 @@ struct CategoryButton: View {
     let isSelected: Bool
     let action: () -> Void
 
-    private var color: Color { Color(hex: category.colorHex) ?? .orange }
+    private var color: Color { Color(hex: category.colorHex) ?? Theme.Colors.fallback }
 
     var body: some View {
         Button(action: action) {

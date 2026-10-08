@@ -1,12 +1,12 @@
 import SwiftUI
 
 enum Theme {
-    // Семантические цвета — заменить на Color("...") после добавления Color Set в Assets
     enum Colors {
-        static let expense = Color.red
-        static let income = Color.green
-        static let transfer = Color.blue
-        static let negativeBalance = Color.red
+        static let expense = Color("Colors/expense")
+        static let income = Color("Colors/income")
+        static let transfer = Color("Colors/transfer")
+        static let negativeBalance = Color("Colors/negativeBalance")
+        static let fallback = Color("Colors/fallback")
     }
 
     enum Spacing {

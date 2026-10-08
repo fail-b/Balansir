@@ -32,6 +32,14 @@ struct StatisticsView: View {
             }
             .navigationTitle("Статистика")
             .task { await viewModel.load() }
+            .alert("Ошибка", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
         }
     }
 
