@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22225" systemVersion="22G91" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
-    <entity name="Account" representedClassName="balancier.Account" syncable="YES">
+    <entity name="Account" representedClassName="Account" syncable="YES">
         <attribute name="accountType" optional="NO" attributeType="String" defaultValueString="debit"/>
         <attribute name="colorHex" optional="NO" attributeType="String" defaultValueString="#4A90D9"/>
         <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
@@ -14,7 +14,7 @@
         <relationship name="incomingEntries" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Entry" inverseName="toAccount" inverseEntity="Entry"/>
         <relationship name="outgoingEntries" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Entry" inverseName="fromAccount" inverseEntity="Entry"/>
     </entity>
-    <entity name="Category" representedClassName="balancier.Category" syncable="YES">
+    <entity name="Category" representedClassName="Category" syncable="YES">
         <attribute name="categoryType" optional="NO" attributeType="String" defaultValueString="expense"/>
         <attribute name="colorHex" optional="NO" attributeType="String" defaultValueString="#FF6B6B"/>
         <attribute name="iconName" optional="NO" attributeType="String" defaultValueString="tag"/>
@@ -24,7 +24,7 @@
         <attribute name="sortOrder" optional="NO" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="entries" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Entry" inverseName="category" inverseEntity="Entry"/>
     </entity>
-    <entity name="Entry" representedClassName="balancier.Entry" syncable="YES">
+    <entity name="Entry" representedClassName="Entry" syncable="YES">
         <attribute name="amount" optional="NO" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="currency" optional="NO" attributeType="String" defaultValueString="RUB"/>
