@@ -1,6 +1,5 @@
 import Foundation
 import CoreData
-import SwiftUI
 
 @objc(Account)
 public class Account: NSManagedObject {
@@ -19,15 +18,5 @@ public class Account: NSManagedObject {
 
     @nonobjc public class func fetchRequest() -> NSFetchRequest<Account> {
         NSFetchRequest<Account>(entityName: "Account")
-    }
-}
-
-extension Account: Identifiable {
-    var type: AccountType {
-        AccountType(rawValue: accountType) ?? .debit
-    }
-
-    var color: Color {
-        Color(hex: colorHex) ?? .blue
     }
 }

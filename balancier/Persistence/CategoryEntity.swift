@@ -1,6 +1,5 @@
 import Foundation
 import CoreData
-import SwiftUI
 
 @objc(Category)
 public class Category: NSManagedObject {
@@ -15,15 +14,5 @@ public class Category: NSManagedObject {
 
     @nonobjc public class func fetchRequest() -> NSFetchRequest<Category> {
         NSFetchRequest<Category>(entityName: "Category")
-    }
-}
-
-extension Category: Identifiable {
-    var type: CategoryType {
-        CategoryType(rawValue: categoryType) ?? .expense
-    }
-
-    var color: Color {
-        Color(hex: colorHex) ?? .orange
     }
 }

@@ -1,32 +1,22 @@
 import Foundation
-import CoreData
 import SwiftUI
 
-@objc(Entry)
-public class Entry: NSManagedObject {
-    @NSManaged public var id: UUID
-    @NSManaged public var date: Date
-    @NSManaged public var entryType: String
-    @NSManaged public var amount: Double
-    @NSManaged public var currency: String
-    @NSManaged public var note: String?
-    @NSManaged public var tags: String?
-    @NSManaged public var isRecurring: Bool
-    @NSManaged public var createdAt: Date
-    @NSManaged public var fromAccount: Account?
-    @NSManaged public var toAccount: Account?
-    @NSManaged public var category: Category?
-
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<Entry> {
-        NSFetchRequest<Entry>(entityName: "Entry")
-    }
+struct EntryModel: Identifiable {
+    let id: UUID
+    var date: Date
+    var type: EntryType
+    var amount: Decimal
+    var currency: String
+    var note: String?
+    var tags: String?
+    var isRecurring: Bool
+    let createdAt: Date
+    var fromAccount: AccountModel?
+    var toAccount: AccountModel?
+    var category: CategoryModel?
 }
 
-extension Entry: Identifiable {
-    var type: EntryType {
-        EntryType(rawValue: entryType) ?? .expense
-    }
-
+extension EntryModel {
     var displayTitle: String {
         switch type {
         case .expense: return category?.name ?? "Расход"
@@ -46,14 +36,6 @@ extension Entry: Identifiable {
         }
     }
 
-    var displayColor: Color {
-        switch type {
-        case .expense: return category?.color ?? .red
-        case .income: return .green
-        case .transfer: return .blue
-        }
-    }
-
     var displayIcon: String {
         switch type {
         case .expense: return category?.iconName ?? "arrow.down.circle"
@@ -62,16 +44,25 @@ extension Entry: Identifiable {
         }
     }
 
+    var displayColor: Color {
+        switch type {
+        case .expense: return Theme.Colors.expense
+        case .income: return Theme.Colors.income
+        case .transfer: return Theme.Colors.transfer
+        }
+    }
+
     var amountColor: Color {
         switch type {
-        case .expense: return .red
-        case .income: return .green
+        case .expense: return Theme.Colors.expense
+        case .income: return Theme.Colors.income
         case .transfer: return .primary
         }
     }
 
     var formattedAmount: String {
-        let value = amount.formatted(.currency(code: currency))
+        let value = (amount as NSDecimalNumber).doubleValue
+            .formatted(.currency(code: currency))
         switch type {
         case .expense: return "−\(value)"
         case .income: return "+\(value)"
