@@ -6,18 +6,23 @@ struct HomeView: View {
     @Binding var isScrolled: Bool
 
     @State private var settingsVM: SettingsViewModel?
-    @State private var showingSettings = false
     @State private var editEntryVM: AddEntryViewModel?
-    @State private var showingEditEntry = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                headerView
+                HomeHeader(
+                    viewModel: viewModel,
+                    monthName: currentMonthName,
+                    onOpenSettings: { settingsVM = viewModel.makeSettingsViewModel() }
+                )
 
-                heroCard
-                    .padding(.top, Theme.Spacing.s)
-                    .padding(.horizontal, Theme.Spacing.l)
+                if !viewModel.isSearchActive {
+                    heroCard
+                        .padding(.top, Theme.Spacing.s)
+                        .padding(.horizontal, Theme.Spacing.l)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
                 accountFilterChips
                     .padding(.top, Theme.Spacing.xl)
@@ -30,7 +35,6 @@ struct HomeView: View {
                             group: group,
                             onTap: { entry in
                                 editEntryVM = viewModel.makeAddEntryViewModel(for: entry)
-                                showingEditEntry = true
                             },
                             onDelete: { entry in
                                 Task { await viewModel.delete(entry: entry) }
@@ -43,17 +47,14 @@ struct HomeView: View {
             }
             .padding(.bottom, Theme.Spacing.s)
         }
+        .scrollDismissesKeyboard(.immediately)
         .reportsScroll(to: $isScrolled)
         .background(Theme.Colors.background)
-        .sheet(isPresented: $showingSettings, onDismiss: { Task { await viewModel.load() } }) {
-            if let vm = settingsVM {
-                SettingsView(viewModel: vm, isScrolled: .constant(false))
-            }
+        .sheet(item: $settingsVM, onDismiss: { Task { await viewModel.load() } }) { vm in
+            SettingsView(viewModel: vm, isScrolled: .constant(false))
         }
-        .sheet(isPresented: $showingEditEntry, onDismiss: { Task { await viewModel.load() } }) {
-            if let vm = editEntryVM {
-                AddEntryView(viewModel: vm)
-            }
+        .sheet(item: $editEntryVM, onDismiss: { Task { await viewModel.load() } }) { vm in
+            AddEntryView(viewModel: vm)
         }
         .task { await viewModel.load() }
         .alert("Ошибка", isPresented: Binding(
@@ -64,53 +65,6 @@ struct HomeView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
-    }
-
-    // MARK: - Header
-
-    private var headerView: some View {
-        HStack {
-            Button { } label: {
-                HStack(spacing: 4) {
-                    Text(currentMonthName)
-                        .font(Theme.Font.screenTitle)
-                        .tracking(Theme.Font.Tracking.screenTitle)
-                        .foregroundStyle(Theme.Colors.ink)
-                    AppIcon.image(named: AppIcon.chevronDown)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.Colors.ink2)
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            HStack(spacing: 0) {
-                Button {
-                    selectedTab = .transactions
-                } label: {
-                    AppIcon.image(named: AppIcon.search)
-                        .font(.system(size: 17))
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    settingsVM = viewModel.makeSettingsViewModel()
-                    showingSettings = true
-                } label: {
-                    AppIcon.image(named: AppIcon.settings)
-                        .font(.system(size: 17))
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-            }
-            .foregroundStyle(Theme.Colors.ink)
-            .glassEffect()
-        }
-        .padding(.horizontal, Theme.Spacing.l)
-        .padding(.top, Theme.Spacing.l)
-        .padding(.bottom, Theme.Spacing.s)
     }
 
     // MARK: - Hero Card
@@ -188,15 +142,21 @@ struct HomeView: View {
 
     private var accountFilterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                chipButton(title: "Все", isActive: viewModel.selectedAccountId == nil, colorHex: nil) {
+            HStack(spacing: Theme.Spacing.s) {
+                AccountChip(
+                    title: "Все",
+                    colorHex: nil,
+                    balance: viewModel.totalBalance,
+                    isActive: viewModel.selectedAccountId == nil
+                ) {
                     viewModel.selectedAccountId = nil
                 }
                 ForEach(viewModel.accounts) { account in
-                    chipButton(
+                    AccountChip(
                         title: account.name,
-                        isActive: viewModel.selectedAccountId == account.id,
-                        colorHex: account.colorHex
+                        colorHex: account.colorHex,
+                        balance: viewModel.balances[account.id] ?? 0,
+                        isActive: viewModel.selectedAccountId == account.id
                     ) {
                         viewModel.selectedAccountId = viewModel.selectedAccountId == account.id ? nil : account.id
                     }
@@ -206,37 +166,36 @@ struct HomeView: View {
         }
     }
 
-    private func chipButton(title: String, isActive: Bool, colorHex: String?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                if let hex = colorHex {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color(hex: hex) ?? Theme.Colors.fallback)
-                        .frame(width: 12, height: 8)
-                }
-                Text(title)
-                    .font(.system(size: 15, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? Theme.Colors.background : Theme.Colors.ink)
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 34)
-            .background(Capsule().fill(isActive ? Theme.Colors.ink : Theme.Colors.card))
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Empty State
 
+    @ViewBuilder
     private var emptyStateView: some View {
-        Text(viewModel.selectedAccountId == nil
-             ? "Операций пока нет. Нажмите «+», чтобы добавить первую."
-             : "По этому счёту операций нет.")
-            .font(.subheadline)
-            .foregroundStyle(Theme.Colors.ink2)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 60)
-            .padding(.horizontal, Theme.Spacing.l)
+        Group {
+            if viewModel.isSearchActive && !searchQueryEmpty {
+                VStack(spacing: Theme.Spacing.xs) {
+                    Text("Ничего не найдено")
+                        .font(Theme.Font.sheetTitle)
+                        .foregroundStyle(Theme.Colors.ink)
+                    Text("Попробуйте другое слово")
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.ink2)
+                }
+            } else {
+                Text(viewModel.selectedAccountId == nil
+                     ? "Операций пока нет. Нажмите «+», чтобы добавить первую."
+                     : "По этому счёту операций нет.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.Colors.ink2)
+            }
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
+        .padding(.horizontal, Theme.Spacing.l)
+    }
+
+    private var searchQueryEmpty: Bool {
+        viewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Helpers
