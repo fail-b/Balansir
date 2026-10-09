@@ -32,6 +32,18 @@ enum Theme {
         static let y: CGFloat = 6
     }
 
+    /// Размеры управляющих элементов.
+    enum Size {
+        /// Высота строки поиска и круглых стеклянных кнопок в шапке (44 pt, §4.1.4).
+        static let searchBar: CGFloat = 44
+    }
+
+    /// Анимации, общие для нескольких экранов.
+    enum Animation {
+        /// Морфинг лупы в строку поиска на Главной (§4.1.4): spring ~0.35 с, damping 0.8.
+        static let searchMorph: SwiftUI.Animation = .spring(response: 0.35, dampingFraction: 0.8)
+    }
+
     enum Spacing {
         static let xs: CGFloat = 4
         static let s: CGFloat = 8
@@ -51,6 +63,7 @@ enum Theme {
         // Новые из дизайна
         static let card: CGFloat = 22
         static let hero: CGFloat = 26
+        static let accountChip: CGFloat = 16
         static let sheet: CGFloat = 38
         static let accountSheet: CGFloat = 44
         static let search: CGFloat = 12
@@ -68,6 +81,7 @@ enum Theme {
         static let rowAmount = SwiftUI.Font.system(size: 16, weight: .semibold)
         static let caption = SwiftUI.Font.system(size: 13)
         static let time = SwiftUI.Font.system(size: 12)
+        static let searchField = SwiftUI.Font.system(size: 17)
         static let tabLabel = SwiftUI.Font.system(size: 10, weight: .semibold)
 
         // Трекинг применяется через .tracking() на Text-view
