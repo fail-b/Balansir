@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "ACE5CE41-416E-41DC-B5D4-F72E5AA1198E",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Balansir.xcodeproj",
+      "identifier" : "DDBBAF3E30769CC000F7A1AA",
+      "name" : "Balansir"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:Balansir.xcodeproj",
+        "identifier" : "DDBBAF5030769CC200F7A1AA",
+        "name" : "BalansirTests"
+      }
+    },
+    {
+      "enabled" : false,
+      "target" : {
+        "containerPath" : "container:Balansir.xcodeproj",
+        "identifier" : "DDBBAF5A30769CC300F7A1AA",
+        "name" : "BalansirUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
