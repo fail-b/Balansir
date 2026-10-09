@@ -4,7 +4,6 @@ enum AppIcon {
     // Навигация и таб-бар
     static let tabHome = "house"
     static let tabHomeFill = "house.fill"
-    static let tabTransactions = "list.bullet"
     static let tabStatistics = "chart.pie"
     static let tabStatisticsFill = "chart.pie.fill"
     static let tabAccounts = "creditcard"

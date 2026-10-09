@@ -17,13 +17,23 @@ struct TabBarSummary: View {
     @ViewBuilder
     private var content: some View {
         switch selectedTab {
-        case .home, .transactions, .add:
-            HStack {
-                Text("Сегодня \(expenseString(homeVM.todayExpense))")
-                    .foregroundStyle(Theme.Colors.ink)
-                Spacer(minLength: Theme.Spacing.s)
-                Text("\(currentMonthName) \(expenseString(homeVM.monthExpense))")
-                    .foregroundStyle(Theme.Colors.ink2)
+        case .home, .add:
+            if homeVM.isSearchActive && !searchQueryEmpty {
+                HStack {
+                    Text("Найдено \(homeVM.searchResultCount)")
+                        .foregroundStyle(Theme.Colors.ink)
+                    Spacer(minLength: Theme.Spacing.s)
+                    Text(expenseString(homeVM.searchResultExpense))
+                        .foregroundStyle(Theme.Colors.ink2)
+                }
+            } else {
+                HStack {
+                    Text("Сегодня \(expenseString(homeVM.todayExpense))")
+                        .foregroundStyle(Theme.Colors.ink)
+                    Spacer(minLength: Theme.Spacing.s)
+                    Text("\(currentMonthName) \(expenseString(homeVM.monthExpense))")
+                        .foregroundStyle(Theme.Colors.ink2)
+                }
             }
         case .statistics:
             HStack {
@@ -38,6 +48,10 @@ struct TabBarSummary: View {
                 .foregroundStyle(Theme.Colors.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private var searchQueryEmpty: Bool {
+        homeVM.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var currentMonthName: String {

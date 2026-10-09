@@ -1,7 +1,8 @@
 import Foundation
 
 @Observable
-final class AddEntryViewModel {
+final class AddEntryViewModel: Identifiable {
+    let id = UUID()
     private(set) var accounts: [AccountModel] = []
     private(set) var categories: [CategoryModel] = []
     private(set) var balances: [UUID: Decimal] = [:]

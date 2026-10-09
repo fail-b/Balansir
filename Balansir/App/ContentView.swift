@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppTab: Hashable {
-    case home, transactions, statistics, accounts
+    case home, statistics, accounts
     /// Не экран, а кнопка «+» справа от таб-бара (нативная «отдельная» вкладка iOS 26).
     /// Выбрать её нельзя — тап открывает шит новой операции.
     case add
@@ -9,12 +9,10 @@ enum AppTab: Hashable {
 
 struct ContentView: View {
     @State private var homeVM: HomeViewModel
-    @State private var transactionsVM: TransactionsViewModel
     @State private var statisticsVM: StatisticsViewModel
     @State private var settingsVM: SettingsViewModel
 
     @State private var selectedTab: AppTab = .home
-    @State private var showAddEntry = false
     @State private var addEntryVM: AddEntryViewModel?
     // Прокручен ли текущий экран ниже порога — тогда показываем сводку рядом со свёрнутым баром.
     @State private var isScrolled = false
@@ -23,7 +21,6 @@ struct ContentView: View {
          categoryRepo: any CategoryRepository,
          entryRepo: any EntryRepository) {
         _homeVM = State(wrappedValue: HomeViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
-        _transactionsVM = State(wrappedValue: TransactionsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
         _statisticsVM = State(wrappedValue: StatisticsViewModel(entryRepo: entryRepo))
         _settingsVM = State(wrappedValue: SettingsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
     }
@@ -36,12 +33,6 @@ struct ContentView: View {
                 HomeView(viewModel: homeVM, selectedTab: $selectedTab, isScrolled: $isScrolled)
             } label: {
                 tabLabel("Главная", icon: AppIcon.tabHome)
-            }
-
-            Tab(value: AppTab.transactions) {
-                TransactionsView(viewModel: transactionsVM, isScrolled: $isScrolled)
-            } label: {
-                tabLabel("Операции", icon: AppIcon.tabTransactions)
             }
 
             Tab(value: AppTab.statistics) {
@@ -70,10 +61,8 @@ struct ContentView: View {
             TabBarSummary(selectedTab: selectedTab, homeVM: homeVM)
         }
         .onChange(of: selectedTab) { isScrolled = false }
-        .sheet(isPresented: $showAddEntry, onDismiss: reloadAll) {
-            if let vm = addEntryVM {
-                AddEntryView(viewModel: vm)
-            }
+        .sheet(item: $addEntryVM, onDismiss: reloadAll) { vm in
+            AddEntryView(viewModel: vm)
         }
     }
 
@@ -84,7 +73,6 @@ struct ContentView: View {
             set: { newValue in
                 if newValue == .add {
                     addEntryVM = homeVM.makeAddEntryViewModel()
-                    showAddEntry = true
                 } else {
                     selectedTab = newValue
                 }
@@ -103,7 +91,6 @@ struct ContentView: View {
     private func reloadAll() {
         Task {
             await homeVM.load()
-            await transactionsVM.load()
             await statisticsVM.load()
             await settingsVM.load()
         }

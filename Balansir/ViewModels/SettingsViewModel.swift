@@ -1,7 +1,8 @@
 import Foundation
 
 @Observable
-final class SettingsViewModel {
+final class SettingsViewModel: Identifiable {
+    let id = UUID()
     private(set) var accounts: [AccountModel] = []
     private(set) var categories: [CategoryModel] = []
     private(set) var balances: [UUID: Decimal] = [:]
