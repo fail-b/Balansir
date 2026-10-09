@@ -90,13 +90,29 @@ struct AddEntryView: View {
             .glassEffect(in: .capsule)
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $showDatePicker) {
+        .sheet(isPresented: $showDatePicker) {
+            datePickerSheet
+        }
+    }
+
+    private var datePickerSheet: some View {
+        NavigationStack {
             DatePicker("Дата", selection: $viewModel.date, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .labelsHidden()
-                .padding()
-                .presentationCompactAdaptation(.popover)
+                .environment(\.locale, Locale(identifier: "ru_RU"))
+                .tint(Theme.Colors.accent)
+                .padding(.horizontal, Theme.Spacing.l)
+                .navigationTitle("Дата")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Готово") { showDatePicker = false }
+                    }
+                }
         }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 
     private var dateLabel: String {
