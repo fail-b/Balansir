@@ -38,7 +38,7 @@ enum SeedData {
             ("Поездки", "airplane", "#45B7D1"),
             ("Машина", "car", "#96CEB4"),
             ("Услуги", "wrench.and.screwdriver", "#DDA0DD"),
-            ("Одежда", "tshirt", "#F7DC6F"),
+            ("Одежда", "tshirt", "#E0B83A"),
             ("Кредиты", "creditcard", "#E74C3C"),
             ("Подписки", "star", "#9B59B6"),
             ("Развлечения", "gamecontroller", "#1ABC9C"),
@@ -48,14 +48,14 @@ enum SeedData {
             ("Хозтовары", "house", "#795548"),
             ("Бизнес", "briefcase", "#607D8B"),
             ("Электроника", "iphone", "#2196F3"),
-            ("Связь", "phone", "#4CAF50"),
+            ("Связь", "phone", "#2E9E5B"),
             ("Физкультура", "figure.run", "#FF9800"),
             ("За квартиру", "building.2", "#3F51B5"),
         ]
         let income: [(String, String, String)] = [
-            ("Зарплата", "dollarsign.circle", "#4CAF50"),
+            ("Зарплата", "banknote", "#4CAF50"),
             ("Фриланс", "laptopcomputer", "#2196F3"),
-            ("Кешбэк", "percent", "#FF9800"),
+            ("Кэшбэк", "percent", "#00BCD4"),
             ("Возврат", "arrow.uturn.left", "#9C27B0"),
             ("Другое", "ellipsis.circle", "#607D8B"),
         ]

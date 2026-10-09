@@ -1,33 +1,39 @@
 import SwiftUI
 
+/// Капсульная цифровая клавиатура (§4.7). Логика ввода — в AddEntryViewModel,
+/// сюда передаются колбэки.
 struct NumpadView: View {
-    @Binding var amountString: String
+    let onDigit: (String) -> Void
+    let onSeparator: () -> Void
+    let onBackspace: () -> Void
 
     private let rows: [[String]] = [
-        ["7", "8", "9"],
-        ["4", "5", "6"],
         ["1", "2", "3"],
-        [".", "0", "⌫"],
+        ["4", "5", "6"],
+        ["7", "8", "9"],
+        [",", "0", "⌫"],
     ]
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Theme.Spacing.s) {
             ForEach(rows, id: \.self) { row in
-                HStack(spacing: 6) {
+                HStack(spacing: Theme.Spacing.s) {
                     ForEach(row, id: \.self) { key in
                         Button { handleKey(key) } label: {
                             Group {
                                 if key == "⌫" {
-                                    Image(systemName: "delete.left").font(.title3)
+                                    AppIcon.image(named: AppIcon.backspace)
+                                        .font(.system(size: 22))
                                 } else {
-                                    Text(key).font(.title2).fontWeight(.medium)
+                                    Text(key).font(.system(size: 26, weight: .medium))
                                 }
                             }
+                            .foregroundStyle(Theme.Colors.ink)
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)
-                            .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: Theme.Radius.s))
+                            .background(Theme.Colors.key, in: Capsule())
                         }
-                        .foregroundStyle(.primary)
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -36,13 +42,9 @@ struct NumpadView: View {
 
     private func handleKey(_ key: String) {
         switch key {
-        case "⌫":
-            amountString = amountString.count > 1 ? String(amountString.dropLast()) : "0"
-        case ".":
-            if !amountString.contains(".") { amountString += "." }
-        default:
-            if amountString == "0" { amountString = key }
-            else if amountString.count < 12 { amountString += key }
+        case "⌫": onBackspace()
+        case ",": onSeparator()
+        default: onDigit(key)
         }
     }
 }

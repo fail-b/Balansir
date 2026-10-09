@@ -2,89 +2,91 @@ import SwiftUI
 
 struct TransactionsView: View {
     @Bindable var viewModel: TransactionsViewModel
+    @Binding var isScrolled: Bool
 
-    @State private var showingAddEntry = false
-    @State private var addEntryVM: AddEntryViewModel?
-    @State private var showingEditEntry = false
     @State private var editEntryVM: AddEntryViewModel?
+    @State private var showingEditEntry = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.entries.isEmpty {
-                    ContentUnavailableView(
-                        "Нет операций",
-                        systemImage: "list.bullet",
-                        description: Text("Добавьте первую операцию через кнопку +")
-                    )
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Операции")
+                    .font(Theme.Font.screenTitle)
+                    .tracking(Theme.Font.Tracking.screenTitle)
+                    .foregroundStyle(Theme.Colors.ink)
+                    .padding(.horizontal, Theme.Spacing.l)
+                    .padding(.top, Theme.Spacing.l)
+
+                searchField
+                    .padding(.top, Theme.Spacing.m)
+                    .padding(.horizontal, Theme.Spacing.l)
+
+                if viewModel.entriesByDay.isEmpty {
+                    emptyStateView
                 } else {
-                    List {
-                        ForEach(viewModel.groupedEntries, id: \.date) { group in
-                            Section {
-                                ForEach(group.entries) { entry in
-                                    EntryRowView(entry: entry)
-                                        .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 16))
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            editEntryVM = viewModel.makeEditEntryViewModel(for: entry)
-                                            showingEditEntry = true
-                                        }
-                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                            Button(role: .destructive) {
-                                                Task { await viewModel.delete(entry) }
-                                            } label: {
-                                                Label("Удалить", systemImage: "trash")
-                                            }
-                                        }
-                                }
-                            } header: {
-                                HStack {
-                                    Text(group.date, style: .date)
-                                        .font(.subheadline).fontWeight(.semibold).foregroundStyle(.primary)
-                                    Spacer()
-                                    let total = viewModel.dayTotal(entries: group.entries)
-                                    Text((total as NSDecimalNumber).doubleValue, format: .currency(code: "RUB"))
-                                        .font(.subheadline)
-                                        .foregroundStyle(total >= 0 ? Theme.Colors.income : Theme.Colors.expense)
-                                }
-                                .textCase(nil)
+                    ForEach(viewModel.entriesByDay) { group in
+                        DaySection(
+                            group: group,
+                            onTap: { entry in
+                                editEntryVM = viewModel.makeEditEntryViewModel(for: entry)
+                                showingEditEntry = true
+                            },
+                            onDelete: { entry in
+                                Task { await viewModel.delete(entry) }
                             }
-                        }
-                    }
-                    .listStyle(.insetGrouped)
-                }
-            }
-            .navigationTitle("Операции")
-            .searchable(text: $viewModel.searchText, prompt: "Поиск")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        addEntryVM = viewModel.makeAddEntryViewModel()
-                        showingAddEntry = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill").font(.title2)
+                        )
+                        .padding(.top, Theme.Spacing.xl)
+                        .padding(.horizontal, Theme.Spacing.l)
                     }
                 }
             }
-            .sheet(isPresented: $showingAddEntry, onDismiss: { Task { await viewModel.load() } }) {
-                if let vm = addEntryVM {
-                    AddEntryView(viewModel: vm)
-                }
-            }
-            .sheet(isPresented: $showingEditEntry, onDismiss: { Task { await viewModel.load() } }) {
-                if let vm = editEntryVM {
-                    AddEntryView(viewModel: vm)
-                }
-            }
-            .task { await viewModel.load() }
-            .alert("Ошибка", isPresented: Binding(
-                get: { viewModel.errorMessage != nil },
-                set: { if !$0 { viewModel.errorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(viewModel.errorMessage ?? "")
+            .padding(.bottom, Theme.Spacing.s)
+        }
+        .reportsScroll(to: $isScrolled)
+        .background(Theme.Colors.background)
+        .sheet(isPresented: $showingEditEntry, onDismiss: { Task { await viewModel.load() } }) {
+            if let vm = editEntryVM {
+                AddEntryView(viewModel: vm)
             }
         }
+        .task { await viewModel.load() }
+        .alert("Ошибка", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
+    }
+
+    // MARK: - Поиск
+
+    private var searchField: some View {
+        HStack(spacing: Theme.Spacing.s) {
+            AppIcon.image(named: AppIcon.search)
+                .font(.system(size: 17))
+                .foregroundStyle(Theme.Colors.ink2)
+            TextField("Категория, счёт или заметка", text: $viewModel.searchText)
+                .font(.system(size: 17))
+                .foregroundStyle(Theme.Colors.ink)
+        }
+        .padding(.horizontal, Theme.Spacing.m)
+        .frame(height: 40)
+        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.search))
+    }
+
+    // MARK: - Пусто
+
+    private var emptyStateView: some View {
+        Text(viewModel.searchText.isEmpty
+             ? "Операций пока нет. Нажмите «+», чтобы добавить первую."
+             : "Ничего не найдено")
+            .font(.subheadline)
+            .foregroundStyle(Theme.Colors.ink2)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 60)
+            .padding(.horizontal, Theme.Spacing.l)
     }
 }

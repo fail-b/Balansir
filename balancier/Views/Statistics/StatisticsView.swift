@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StatisticsView: View {
     @Bindable var viewModel: StatisticsViewModel
+    @Binding var isScrolled: Bool
 
     var body: some View {
         NavigationStack {
@@ -30,6 +31,7 @@ struct StatisticsView: View {
                 }
                 .padding(.bottom, Theme.Spacing.xxl)
             }
+            .reportsScroll(to: $isScrolled)
             .navigationTitle("Статистика")
             .task { await viewModel.load() }
             .alert("Ошибка", isPresented: Binding(

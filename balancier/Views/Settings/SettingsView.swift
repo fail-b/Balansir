@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
+    @Binding var isScrolled: Bool
 
     @State private var showingAddAccount = false
     @State private var showingEditAccount = false
@@ -83,6 +84,7 @@ struct SettingsView: View {
                 } header: { Text("Категории") }
             }
             .listStyle(.insetGrouped)
+            .reportsScroll(to: $isScrolled)
             .navigationTitle("Настройки")
             .sheet(isPresented: $showingAddAccount, onDismiss: { Task { await viewModel.load() } }) {
                 if let vm = addAccountVM { AccountFormView(viewModel: vm) }

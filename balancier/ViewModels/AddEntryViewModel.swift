@@ -4,6 +4,7 @@ import Foundation
 final class AddEntryViewModel {
     private(set) var accounts: [AccountModel] = []
     private(set) var categories: [CategoryModel] = []
+    private(set) var balances: [UUID: Decimal] = [:]
 
     var selectedType = EntryType.expense
     var amountString = "0"
@@ -30,6 +31,10 @@ final class AddEntryViewModel {
     var isEditing: Bool { editingEntry != nil }
     var amount: Decimal { Decimal(string: amountString) ?? 0 }
 
+    /// Валюта операции = валюта выбранного счёта (символ «₽»/«$»/… зависит от неё).
+    var currency: String { selectedAccount?.currency ?? "RUB" }
+    var currencySymbol: String { MoneyFormatter.symbol(for: currency) }
+
     var filteredCategories: [CategoryModel] {
         categories.filter { $0.categoryType == selectedType.categoryType }
     }
@@ -42,13 +47,24 @@ final class AddEntryViewModel {
         }
     }
 
+    func balance(for account: AccountModel) -> Decimal {
+        balances[account.id] ?? account.initialBalance
+    }
+
+    /// Подпись строки счёта: «Тинькофф · 154 320 ₽».
+    func subtitle(for account: AccountModel) -> String {
+        "\(account.name) · \(MoneyFormatter.format(balance(for: account), currency: account.currency))"
+    }
+
     func load() async {
         do {
             async let accs = accountRepo.fetchAll()
             async let cats = categoryRepo.fetchAll()
-            let (fetchedAccounts, fetchedCategories) = try await (accs, cats)
+            async let ents = entryRepo.fetchAll()
+            let (fetchedAccounts, fetchedCategories, fetchedEntries) = try await (accs, cats, ents)
             accounts = fetchedAccounts
             categories = fetchedCategories
+            balances = BalanceService.computeBalances(accounts: fetchedAccounts, entries: fetchedEntries)
 
             if !hasLoaded {
                 hasLoaded = true
@@ -69,9 +85,77 @@ final class AddEntryViewModel {
                     selectedCategory = entry.category.flatMap { c in categories.first { $0.id == c.id } }
                 } else {
                     selectedAccount = accounts.first
+                    onTypeChanged()
                 }
             }
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    // MARK: - Смена типа и дефолты
+
+    /// Вызывается при смене сегмента Расход/Доход/Перевод.
+    func onTypeChanged() {
+        if selectedType == .transfer {
+            selectedCategory = nil
+            if selectedToAccount == nil || selectedToAccount?.id == selectedAccount?.id {
+                selectedToAccount = accounts.first { $0.id != selectedAccount?.id }
+            }
+        } else {
+            if selectedCategory == nil || selectedCategory?.categoryType != selectedType.categoryType {
+                selectedCategory = filteredCategories.first
+            }
+        }
+    }
+
+    // MARK: - Ввод суммы (правила §4.7)
+    // amountString хранит разделитель как «.» (для Decimal); «,» — только на экране.
+
+    func inputDigit(_ digit: String) {
+        if let dotIndex = amountString.firstIndex(of: ".") {
+            // дробная часть: не больше 2 знаков
+            let fraction = amountString[amountString.index(after: dotIndex)...]
+            if fraction.count >= 2 { return }
+            amountString += digit
+        } else if amountString == "0" {
+            amountString = digit            // цифра при «0» заменяет его
+        } else {
+            if amountString.count >= 9 { return }   // не больше 9 цифр целой части
+            amountString += digit
+        }
+    }
+
+    func inputSeparator() {
+        if !amountString.contains(".") { amountString += "." }   // «,» на пустой сумме → «0,»
+    }
+
+    func backspace() {
+        if amountString.count > 1 {
+            amountString.removeLast()
+        } else {
+            amountString = "0"
+        }
+    }
+
+    /// Сумма для показа: целая часть группируется пробелами, дробная — через «,».
+    var formattedAmount: String {
+        let parts = amountString.split(separator: ".", maxSplits: 1, omittingEmptySubsequences: false)
+        let intDigits = String(parts[0])
+        let grouped = groupThousands(intDigits)
+        if amountString.contains(".") {
+            let fraction = parts.count > 1 ? String(parts[1]) : ""
+            return "\(grouped),\(fraction)"
+        }
+        return grouped
+    }
+
+    private func groupThousands(_ digits: String) -> String {
+        guard let number = Int(digits) else { return digits }
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.groupingSeparator = " "
+        f.minimumFractionDigits = 0
+        f.maximumFractionDigits = 0
+        return f.string(from: NSNumber(value: number)) ?? digits
     }
 
     func save() async {
@@ -81,7 +165,7 @@ final class AddEntryViewModel {
             date: date,
             type: selectedType,
             amount: amount,
-            currency: "RUB",
+            currency: currency,
             note: note.isEmpty ? nil : note,
             tags: editingEntry?.tags,
             isRecurring: editingEntry?.isRecurring ?? false,

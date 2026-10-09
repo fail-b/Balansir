@@ -25,21 +25,8 @@ final class TransactionsViewModel {
         }
     }
 
-    var groupedEntries: [(date: Date, entries: [EntryModel])] {
-        let cal = Calendar.current
-        let groups = Dictionary(grouping: filteredEntries) { cal.startOfDay(for: $0.date) }
-        return groups.sorted { $0.key > $1.key }
-            .map { (date: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
-    }
-
-    func dayTotal(entries: [EntryModel]) -> Decimal {
-        entries.reduce(Decimal(0)) { acc, e in
-            switch e.type {
-            case .expense: return acc - e.amount
-            case .income: return acc + e.amount
-            case .transfer: return acc
-            }
-        }
+    var entriesByDay: [DayGroup] {
+        DayGroup.grouped(from: filteredEntries)
     }
 
     func load() async {

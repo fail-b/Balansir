@@ -42,45 +42,31 @@ struct TransactionsViewModelTests {
 
     // MARK: Группировка
 
-    @Test func groupedEntries_группирует_по_дням() async {
+    @Test func entriesByDay_группирует_по_дням() async {
         let todayEntry1 = EntryModel.makeTest(type: .expense, amount: 100, daysAgo: 0)
         let todayEntry2 = EntryModel.makeTest(type: .income, amount: 200, daysAgo: 0)
         let yesterdayEntry = EntryModel.makeTest(type: .expense, amount: 50, daysAgo: 1)
         let (vm, _) = makeVM(entries: [todayEntry1, todayEntry2, yesterdayEntry])
         await vm.load()
 
-        #expect(vm.groupedEntries.count == 2)
+        #expect(vm.entriesByDay.count == 2)
         // первая группа — сегодня (более свежая)
-        #expect(vm.groupedEntries[0].entries.count == 2)
-        #expect(vm.groupedEntries[1].entries.count == 1)
+        #expect(vm.entriesByDay[0].entries.count == 2)
+        #expect(vm.entriesByDay[1].entries.count == 1)
     }
 
-    // MARK: dayTotal
+    // MARK: Сумма дня — только расходы
 
-    @Test func dayTotal_расходы_отрицательные() {
-        let (vm, _) = makeVM()
-        let entries: [EntryModel] = [
-            .makeTest(type: .expense, amount: 300),
-            .makeTest(type: .expense, amount: 100),
-        ]
-        #expect(vm.dayTotal(entries: entries) == -400)
-    }
-
-    @Test func dayTotal_доходы_положительные() {
-        let (vm, _) = makeVM()
-        let entries: [EntryModel] = [
-            .makeTest(type: .income, amount: 500),
-            .makeTest(type: .income, amount: 200),
-        ]
-        #expect(vm.dayTotal(entries: entries) == 700)
-    }
-
-    @Test func dayTotal_переводы_нейтральны() {
-        let (vm, _) = makeVM()
-        let entries: [EntryModel] = [
-            .makeTest(type: .transfer, amount: 1000),
-        ]
-        #expect(vm.dayTotal(entries: entries) == 0)
+    @Test func entriesByDay_суммаДня_толькоРасходы() async {
+        let (vm, _) = makeVM(entries: [
+            .makeTest(type: .expense, amount: 300, daysAgo: 0),
+            .makeTest(type: .expense, amount: 100, daysAgo: 0),
+            .makeTest(type: .income, amount: 500, daysAgo: 0),
+            .makeTest(type: .transfer, amount: 1000, daysAgo: 0),
+        ])
+        await vm.load()
+        #expect(vm.entriesByDay.count == 1)
+        #expect(vm.entriesByDay[0].dayExpense == 400)
     }
 
     // MARK: Поиск

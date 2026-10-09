@@ -23,52 +23,19 @@ extension EntryModel {
         switch type {
         case .expense: return category?.name ?? "Расход"
         case .income: return category?.name ?? "Доход"
-        case .transfer:
-            let from = fromAccount?.name ?? ""
-            let to = toAccount?.name ?? ""
-            return "\(from) → \(to)"
+        case .transfer: return "Перевод"
         }
     }
 
+    // Для переводов возвращает «Откуда → Куда», иначе — имя счёта
     var displayAccount: String {
         switch type {
         case .expense: return fromAccount?.name ?? ""
         case .income: return toAccount?.name ?? ""
-        case .transfer: return fromAccount?.name ?? ""
-        }
-    }
-
-    var displayIcon: String {
-        switch type {
-        case .expense: return category?.iconName ?? "arrow.down.circle"
-        case .income: return category?.iconName ?? "arrow.up.circle"
-        case .transfer: return "arrow.left.arrow.right"
-        }
-    }
-
-    var displayColor: Color {
-        switch type {
-        case .expense: return Theme.Colors.expense
-        case .income: return Theme.Colors.income
-        case .transfer: return Theme.Colors.transfer
-        }
-    }
-
-    var amountColor: Color {
-        switch type {
-        case .expense: return Theme.Colors.expense
-        case .income: return Theme.Colors.income
-        case .transfer: return .primary
-        }
-    }
-
-    var formattedAmount: String {
-        let value = (amount as NSDecimalNumber).doubleValue
-            .formatted(.currency(code: currency))
-        switch type {
-        case .expense: return "−\(value)"
-        case .income: return "+\(value)"
-        case .transfer: return value
+        case .transfer:
+            let from = fromAccount?.name ?? ""
+            let to = toAccount?.name ?? ""
+            return "\(from) → \(to)"
         }
     }
 }
