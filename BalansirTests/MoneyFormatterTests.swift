@@ -38,4 +38,30 @@ struct MoneyFormatterTests {
     @Test func валюта_usd() {
         #expect(MoneyFormatter.format(1000, currency: "USD") == "1\u{00A0}000 $")
     }
+
+    // MARK: - compact
+
+    @Test func compact_до_миллиона_как_обычный() {
+        #expect(MoneyFormatter.compact(999_999) == "999\u{00A0}999 ₽")
+    }
+
+    @Test func compact_ровно_миллион_без_дроби() {
+        #expect(MoneyFormatter.compact(1_000_000) == "1 млн ₽")
+    }
+
+    @Test func compact_миллион_с_одним_знаком() {
+        #expect(MoneyFormatter.compact(1_240_000) == "1,2 млн ₽")
+    }
+
+    @Test func compact_ровные_миллиарды_без_дроби() {
+        #expect(MoneyFormatter.compact(2_000_000_000) == "2 млрд ₽")
+    }
+
+    @Test func compact_отрицательная_сумма_с_минусом_U2212() {
+        #expect(MoneyFormatter.compact(-18_400) == "\u{2212}18\u{00A0}400 ₽")
+    }
+
+    @Test func compact_отрицательный_миллион() {
+        #expect(MoneyFormatter.compact(-1_500_000) == "\u{2212}1,5 млн ₽")
+    }
 }
