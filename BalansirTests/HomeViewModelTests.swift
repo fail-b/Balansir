@@ -215,4 +215,106 @@ struct HomeViewModelTests {
 
         #expect(vm.entriesByDay[0].dayExpense == 400)
     }
+
+    // MARK: Поиск
+
+    private func makeSearchVM(entries: [EntryModel], accounts: [AccountModel] = []) -> HomeViewModel {
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = accounts
+        let entryRepo = MockEntryRepository()
+        entryRepo.entries = entries
+        return HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+    }
+
+    @Test func поиск_по_названию_категории() async {
+        let cat = CategoryModel.makeTest(name: "Продукты")
+        let entry1 = EntryModel.makeTest(type: .expense, amount: 100, category: cat)
+        let entry2 = EntryModel.makeTest(type: .expense, amount: 50)
+        let vm = makeSearchVM(entries: [entry1, entry2])
+        await vm.load()
+        vm.searchQuery = "Продукты"
+        #expect(vm.filteredEntries.count == 1)
+        #expect(vm.filteredEntries[0].id == entry1.id)
+    }
+
+    @Test func поиск_по_заметке() async {
+        let entry1 = EntryModel(
+            id: UUID(), date: Date(), type: .expense, amount: 100, currency: "RUB",
+            note: "кофе с другом", tags: nil, isRecurring: false, isSoftDeleted: false,
+            createdAt: Date(), updatedAt: Date(),
+            fromAccount: nil, toAccount: nil, category: nil
+        )
+        let entry2 = EntryModel.makeTest(type: .expense, amount: 50)
+        let vm = makeSearchVM(entries: [entry1, entry2])
+        await vm.load()
+        vm.searchQuery = "кофе"
+        #expect(vm.filteredEntries.count == 1)
+        #expect(vm.filteredEntries[0].id == entry1.id)
+    }
+
+    @Test func поиск_регистр_и_ё_равно_е() async {
+        let cat = CategoryModel.makeTest(name: "Самолёт")
+        let entry = EntryModel.makeTest(type: .expense, amount: 100, category: cat)
+        let vm = makeSearchVM(entries: [entry])
+        await vm.load()
+        vm.searchQuery = "САМОЛЕТ"
+        #expect(vm.filteredEntries.count == 1)
+    }
+
+    @Test func поиск_перевода_по_второму_счёту() async {
+        let from = AccountModel.makeTest(name: "Тинькофф")
+        let to = AccountModel.makeTest(name: "Наличка")
+        let transfer = EntryModel.makeTest(type: .transfer, amount: 500, from: from, to: to)
+        let vm = makeSearchVM(entries: [transfer])
+        await vm.load()
+        vm.searchQuery = "Наличка"
+        #expect(vm.filteredEntries.count == 1)
+    }
+
+    @Test func поиск_по_сумме_с_пробелом() async {
+        let match = EntryModel.makeTest(type: .expense, amount: 2400)
+        let other = EntryModel.makeTest(type: .expense, amount: 150)
+        let vm = makeSearchVM(entries: [match, other])
+        await vm.load()
+        vm.searchQuery = "2 400"
+        #expect(vm.filteredEntries.count == 1)
+        #expect(vm.filteredEntries[0].id == match.id)
+    }
+
+    @Test func поиск_сочетается_с_фильтром_по_счёту() async {
+        let cat = CategoryModel.makeTest(name: "Еда")
+        let a1 = AccountModel.makeTest(name: "A1")
+        let a2 = AccountModel.makeTest(name: "A2")
+        let onA1 = EntryModel.makeTest(type: .expense, amount: 100, from: a1, category: cat)
+        let onA2 = EntryModel.makeTest(type: .expense, amount: 200, from: a2, category: cat)
+        let vm = makeSearchVM(entries: [onA1, onA2], accounts: [a1, a2])
+        await vm.load()
+        vm.selectedAccountId = a1.id
+        vm.searchQuery = "Еда"
+        #expect(vm.filteredEntries.count == 1)
+        #expect(vm.filteredEntries[0].id == onA1.id)
+    }
+
+    @Test func пустой_поиск_возвращает_все_записи() async {
+        let vm = makeSearchVM(entries: [
+            .makeTest(type: .expense, amount: 100),
+            .makeTest(type: .income, amount: 200),
+        ])
+        await vm.load()
+        vm.searchQuery = ""
+        #expect(vm.filteredEntries.count == 2)
+    }
+
+    @Test func searchResultExpense_суммирует_только_расходы() async {
+        let cat = CategoryModel.makeTest(name: "Еда")
+        let vm = makeSearchVM(entries: [
+            .makeTest(type: .expense, amount: 300, category: cat),
+            .makeTest(type: .expense, amount: 100, category: cat),
+            .makeTest(type: .income, amount: 500, category: cat),
+        ])
+        await vm.load()
+        vm.searchQuery = "Еда"
+        #expect(vm.searchResultCount == 3)
+        #expect(vm.searchResultExpense == 400)
+    }
 }

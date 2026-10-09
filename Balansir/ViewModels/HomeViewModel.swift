@@ -47,7 +47,20 @@ final class HomeViewModel {
     private(set) var monthExpense: Decimal = 0
     private(set) var monthIncome: Decimal = 0
     var selectedAccountId: UUID? = nil
+    var searchQuery: String = ""
+    var isSearchActive: Bool = false
     var errorMessage: String?
+
+    // Строка суммы для числового поиска: без разделителей тысяч, запятая ru_RU, без хвостовых нулей («2400,5»).
+    private static let amountSearchFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.locale = Locale(identifier: "ru_RU")
+        f.usesGroupingSeparator = false
+        f.minimumFractionDigits = 0
+        f.maximumFractionDigits = 2
+        return f
+    }()
 
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
@@ -71,16 +84,66 @@ final class HomeViewModel {
         return monthExpense / days
     }
 
+    /// Лента с учётом фильтра по счёту (карусель) И поискового запроса.
     var filteredEntries: [EntryModel] {
-        guard let accountId = selectedAccountId else { return allEntries }
-        return allEntries.filter { entry in
-            switch entry.type {
-            case .expense: return entry.fromAccount?.id == accountId
-            case .income: return entry.toAccount?.id == accountId
-            case .transfer:
-                return entry.fromAccount?.id == accountId || entry.toAccount?.id == accountId
-            }
+        let byAccount = allEntries.filter(accountMatches)
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return byAccount }
+
+        let needle = normalize(query)
+        let numericNeedle = isNumericQuery(query) ? query.replacingOccurrences(of: " ", with: "") : nil
+        return byAccount.filter { entry in
+            textMatches(entry, needle: needle)
+                || (numericNeedle.map { amountMatches(entry, numericNeedle: $0) } ?? false)
         }
+    }
+
+    /// Количество найденных операций (для сводки в таб-баре в режиме поиска).
+    var searchResultCount: Int { filteredEntries.count }
+
+    /// Сумма расходов среди найденного (для сводки в таб-баре).
+    var searchResultExpense: Decimal {
+        filteredEntries
+            .filter { $0.type == .expense }
+            .reduce(Decimal(0)) { $0 + $1.amount }
+    }
+
+    // Подходит ли операция под выбранный в карусели счёт (nil — все).
+    private func accountMatches(_ entry: EntryModel) -> Bool {
+        guard let accountId = selectedAccountId else { return true }
+        switch entry.type {
+        case .expense: return entry.fromAccount?.id == accountId
+        case .income: return entry.toAccount?.id == accountId
+        case .transfer:
+            return entry.fromAccount?.id == accountId || entry.toAccount?.id == accountId
+        }
+    }
+
+    // Нормализация запроса/текста: без учёта регистра и диакритики (ё = е).
+    private func normalize(_ text: String) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive],
+                     locale: Locale(identifier: "ru_RU"))
+    }
+
+    // Запрос числовой, если состоит только из цифр, пробелов и запятой.
+    private func isNumericQuery(_ query: String) -> Bool {
+        !query.isEmpty && query.allSatisfy { $0.isNumber || $0 == " " || $0 == "," }
+    }
+
+    // Поиск по категории, счёту (у перевода — по обоим) и заметке.
+    private func textMatches(_ entry: EntryModel, needle: String) -> Bool {
+        var fields: [String] = []
+        if let category = entry.category?.name { fields.append(category) }
+        if let from = entry.fromAccount?.name { fields.append(from) }
+        if let to = entry.toAccount?.name { fields.append(to) }
+        if let note = entry.note { fields.append(note) }
+        return fields.contains { normalize($0).contains(needle) }
+    }
+
+    // Числовой поиск по сумме: сравнение по префиксу строки суммы без разделителей.
+    private func amountMatches(_ entry: EntryModel, numericNeedle: String) -> Bool {
+        let amountString = Self.amountSearchFormatter.string(from: entry.amount as NSDecimalNumber) ?? ""
+        return amountString.hasPrefix(numericNeedle)
     }
 
     var entriesByDay: [DayGroup] {
