@@ -52,3 +52,4 @@ fastlane/test_output
 *.env
 .env*
 GoogleService-Info.plist
+docs/design/
