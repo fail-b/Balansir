@@ -20,6 +20,11 @@ struct DaySection: View {
                         .foregroundStyle(Theme.Colors.ink2)
                 }
             }
+            // Своя зона касания у заголовка: иначе SwiftUI отдаёт тап ближайшей
+            // тапаемой строке (последней операции дня выше) и открывает её редактирование.
+            .contentShape(Rectangle())
+            .onTapGesture {}
+            .accessibilityAddTraits(.isHeader)
 
             VStack(spacing: 0) {
                 ForEach(Array(group.entries.enumerated()), id: \.element.id) { idx, entry in

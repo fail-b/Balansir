@@ -84,6 +84,7 @@ struct SettingsView: View {
                 } header: { Text("Категории") }
             }
             .listStyle(.insetGrouped)
+            .clearsBottomAccessory()
             .reportsScroll(to: $isScrolled)
             .navigationTitle("Настройки")
             .sheet(isPresented: $showingAddAccount, onDismiss: { Task { await viewModel.load() } }) {

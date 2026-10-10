@@ -7,15 +7,22 @@ import SwiftUI
 struct HomeHeader: View {
     @Bindable var viewModel: HomeViewModel
     let monthName: String
+    /// Прогресс жеста «потянуть вниз» 0…1 (§4.1.4): растягивает капсулу лупы.
+    var pullProgress: CGFloat = 0
+    /// Фокус строки поиска (владелец — HomeView, чтобы закрывать поиск тапом/свайпом).
+    var searchFocus: FocusState<Bool>.Binding
     var onOpenSettings: () -> Void
-
-    @FocusState private var isSearchFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Namespace private var glassNamespace
 
     private var morphAnimation: SwiftUI.Animation? {
         reduceMotion ? nil : Theme.Animation.searchMorph
+    }
+
+    // Reduce Motion → без растягивания по жесту (только активация по порогу).
+    private var stretch: CGFloat {
+        reduceMotion ? 0 : pullProgress
     }
 
     // Один общий id под морфинг: капсула лупы ↔ строка поиска.
@@ -32,10 +39,12 @@ struct HomeHeader: View {
         .padding(.horizontal, Theme.Spacing.l)
         .padding(.top, Theme.Spacing.l)
         .padding(.bottom, Theme.Spacing.s)
-        // Свайп по ленте снимает фокус; если запрос пуст — выходим из поиска.
-        .onChange(of: isSearchFocused) { _, focused in
-            if !focused && isQueryEmpty {
-                withAnimation(morphAnimation) { viewModel.isSearchActive = false }
+        // Выход из поиска при потере фокуса — в HomeView: там известна фаза скролла.
+        // Активация жестом просит фокус здесь (FocusState живёт в шапке).
+        .onChange(of: viewModel.shouldFocusSearch) { _, should in
+            if should {
+                searchFocus.wrappedValue = true
+                viewModel.shouldFocusSearch = false
             }
         }
     }
@@ -43,41 +52,63 @@ struct HomeHeader: View {
     // MARK: - Обычное состояние
 
     private var normalHeader: some View {
-        HStack {
-            Button {} label: {
-                HStack(spacing: 4) {
-                    Text(monthName)
-                        .font(Theme.Font.screenTitle)
-                        .tracking(Theme.Font.Tracking.screenTitle)
-                        .foregroundStyle(Theme.Colors.ink)
-                    AppIcon.image(named: AppIcon.chevronDown)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.Colors.ink2)
+        GeometryReader { geo in
+            // Капсула лупы растёт от обычной ширины (лупа + настройки) до полной ширины шапки.
+            let baseWidth = Theme.Size.searchBar * 2
+            let capsuleWidth = baseWidth + stretch * (geo.size.width - baseWidth)
+
+            ZStack {
+                HStack {
+                    Button {} label: {
+                        HStack(spacing: 4) {
+                            Text(monthName)
+                                .font(Theme.Font.screenTitle)
+                                .tracking(Theme.Font.Tracking.screenTitle)
+                                .foregroundStyle(Theme.Colors.ink)
+                            AppIcon.image(named: AppIcon.chevronDown)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Theme.Colors.ink2)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    Spacer()
                 }
+                .opacity(1 - stretch)
+
+                HStack {
+                    Spacer()
+                    searchCapsule(width: capsuleWidth)
+                }
+            }
+        }
+        .frame(height: Theme.Size.searchBar)
+    }
+
+    private func searchCapsule(width: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            Button(action: activateSearch) {
+                AppIcon.image(named: AppIcon.search)
+                    .font(.system(size: 17))
+                    .scaleEffect(pullProgress >= 1 && !reduceMotion ? Theme.Pull.magnifierScaleActive : 1)
+                    .animation(morphAnimation, value: pullProgress >= 1)
+                    .frame(width: Theme.Size.searchBar, height: Theme.Size.searchBar)
             }
             .buttonStyle(.plain)
 
-            Spacer()
+            Spacer(minLength: 0)
 
-            HStack(spacing: 0) {
-                Button(action: activateSearch) {
-                    AppIcon.image(named: AppIcon.search)
-                        .font(.system(size: 17))
-                        .frame(width: Theme.Size.searchBar, height: Theme.Size.searchBar)
-                }
-                .buttonStyle(.plain)
-
-                Button(action: onOpenSettings) {
-                    AppIcon.image(named: AppIcon.settings)
-                        .font(.system(size: 17))
-                        .frame(width: Theme.Size.searchBar, height: Theme.Size.searchBar)
-                }
-                .buttonStyle(.plain)
+            Button(action: onOpenSettings) {
+                AppIcon.image(named: AppIcon.settings)
+                    .font(.system(size: 17))
+                    .frame(width: Theme.Size.searchBar, height: Theme.Size.searchBar)
             }
-            .foregroundStyle(Theme.Colors.ink)
-            .glassEffect()
-            .glassEffectID(searchGlassID, in: glassNamespace)
+            .buttonStyle(.plain)
+            .opacity(1 - stretch)
         }
+        .foregroundStyle(Theme.Colors.ink)
+        .frame(width: width, height: Theme.Size.searchBar)
+        .glassEffect()
+        .glassEffectID(searchGlassID, in: glassNamespace)
     }
 
     // MARK: - Режим поиска
@@ -92,7 +123,7 @@ struct HomeHeader: View {
                 TextField("Категория, счёт или заметка", text: $viewModel.searchQuery)
                     .font(Theme.Font.searchField)
                     .foregroundStyle(Theme.Colors.ink)
-                    .focused($isSearchFocused)
+                    .focused(searchFocus)
                     .submitLabel(.search)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
@@ -133,12 +164,12 @@ struct HomeHeader: View {
 
     private func activateSearch() {
         withAnimation(morphAnimation) { viewModel.isSearchActive = true }
-        isSearchFocused = true
+        searchFocus.wrappedValue = true
     }
 
     private func closeSearch() {
+        searchFocus.wrappedValue = false
         viewModel.searchQuery = ""
-        isSearchFocused = false
         withAnimation(morphAnimation) { viewModel.isSearchActive = false }
     }
 }

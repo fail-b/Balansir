@@ -31,6 +31,7 @@ struct StatisticsView: View {
                 }
                 .padding(.bottom, Theme.Spacing.xxl)
             }
+            .clearsBottomAccessory()
             .reportsScroll(to: $isScrolled)
             .navigationTitle("Статистика")
             .task { await viewModel.load() }

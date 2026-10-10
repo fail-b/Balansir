@@ -49,6 +49,8 @@ final class HomeViewModel {
     var selectedAccountId: UUID? = nil
     var searchQuery: String = ""
     var isSearchActive: Bool = false
+    /// Запрос фокуса на поле поиска (активация жестом): шапка ставит фокус и сбрасывает флаг.
+    var shouldFocusSearch: Bool = false
     var errorMessage: String?
 
     // Строка суммы для числового поиска: без разделителей тысяч, запятая ru_RU, без хвостовых нулей («2400,5»).

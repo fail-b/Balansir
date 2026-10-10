@@ -30,7 +30,8 @@ struct SwipeToDeleteRow<Content: View>: View {
                         onTap()
                     }
                 }
-                .simultaneousGesture(dragGesture)
+                // UIKit-пан: не блокирует вертикальный скролл ленты (в отличие от DragGesture).
+                .gesture(HorizontalPanGesture(onChanged: dragChanged, onEnded: dragEnded))
         }
         .onDisappear {
             // Сбрасываем свайп, чтобы при возврате на вкладку строка была закрыта
@@ -62,27 +63,22 @@ struct SwipeToDeleteRow<Content: View>: View {
         .background(Theme.Colors.expense)
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 12)
-            .onChanged { value in
-                // Начинаем тянуть, только если движение преимущественно горизонтальное,
-                // иначе отдаём жест вертикальному скроллу.
-                if !isDragging {
-                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                    isDragging = true
-                    startOffset = offset
-                }
-                let proposed = startOffset + value.translation.width
-                offset = min(max(proposed, -actionWidth), 0)
-            }
-            .onEnded { _ in
-                guard isDragging else { return }
-                isDragging = false
-                let shouldOpen = offset < -actionWidth / 2
-                withAnimation(.snappy) {
-                    offset = shouldOpen ? -actionWidth : 0
-                }
-            }
+    private func dragChanged(_ translationX: CGFloat) {
+        if !isDragging {
+            isDragging = true
+            startOffset = offset
+        }
+        let proposed = startOffset + translationX
+        offset = min(max(proposed, -actionWidth), 0)
+    }
+
+    private func dragEnded() {
+        guard isDragging else { return }
+        isDragging = false
+        let shouldOpen = offset < -actionWidth / 2
+        withAnimation(.snappy) {
+            offset = shouldOpen ? -actionWidth : 0
+        }
     }
 
     private func close() {
