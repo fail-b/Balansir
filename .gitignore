@@ -52,4 +52,5 @@ fastlane/test_output
 *.env
 .env*
 GoogleService-Info.plist
-docs/design/
+docs/design/*.zip
+docs/design/Balansir AppIcon/
