@@ -24,6 +24,8 @@ struct HomeView: View {
     @State private var scrollPosition = ScrollPosition(edge: .top)
     // Высота hero вместе с верхним отступом — последняя измеренная (в поиске hero нет в раскладке).
     @State private var heroHeight: CGFloat = 0
+    // Высота шапки (строка поиска с отступами): по ней решаем, видна ли строка при закрытии.
+    @State private var headerHeight: CGFloat = 0
     // Текущее смещение ленты. Класс без наблюдения: запись не перерисовывает экран на каждом кадре.
     @State private var scrollMetrics = ScrollMetrics()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -131,6 +133,7 @@ struct HomeView: View {
                 searchFocus: $isSearchFocused,
                 onOpenSettings: { settingsVM = viewModel.makeSettingsViewModel() }
             )
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
 
             if !viewModel.isSearchActive {
                 heroCard
@@ -354,14 +357,25 @@ struct HomeView: View {
         }
     }
 
-    /// Выход из поиска без сдвига видимых строк: если лента прокручена, hero вставляется
-    /// над экраном без анимации, а смещение увеличивается на его высоту — строки остаются на месте.
-    /// У самого верха — обычная анимация (hero выезжает сверху).
+    /// Выход из поиска после остановки скролла.
+    /// - Строка поиска ещё видна → выход заметный, как по ✕: лента плавно возвращается к верху,
+    ///   строка морфится в лупу, hero выезжает сверху.
+    /// - Строка ушла за экран → выход незаметный: hero вставляется над экраном без анимации,
+    ///   смещение растёт на его высоту, видимые строки остаются на месте.
     private func closeSearchKeepingPosition() {
         guard viewModel.isSearchActive, searchQueryEmpty else { return }
         let offset = scrollMetrics.offset
-        guard offset > 1, heroHeight > 0 else {
+        guard offset > 1 else {
             closeSearch()
+            return
+        }
+        let searchBarVisible = offset < headerHeight
+        guard !searchBarVisible, heroHeight > 0 else {
+            isSearchFocused = false
+            withAnimation(reduceMotion ? nil : Theme.Animation.searchMorph) {
+                viewModel.isSearchActive = false
+                scrollPosition.scrollTo(edge: .top)
+            }
             return
         }
         var transaction = Transaction()
