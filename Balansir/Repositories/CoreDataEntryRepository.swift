@@ -65,4 +65,16 @@ final class CoreDataEntryRepository: EntryRepository {
             }
         }
     }
+
+    func restore(_ id: UUID) async throws {
+        try await context.perform {
+            let request = Entry.fetchRequest()
+            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            if let entity = try self.context.fetch(request).first {
+                entity.isSoftDeleted = false
+                entity.updatedAt = Date()
+                try self.context.save()
+            }
+        }
+    }
 }

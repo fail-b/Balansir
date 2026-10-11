@@ -317,4 +317,86 @@ struct HomeViewModelTests {
         #expect(vm.searchResultCount == 3)
         #expect(vm.searchResultExpense == 400)
     }
+
+    // MARK: - Удаление и отмена (§4.2)
+
+    @Test func удаление_убирает_операцию_и_пересчитывает_баланс() async {
+        let account = AccountModel.makeTest(initialBalance: 1000)
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = [account]
+        let entry = EntryModel.makeTest(type: .expense, amount: 300, from: account)
+        let entryRepo = MockEntryRepository()
+        entryRepo.entries = [entry]
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        await vm.load()
+        #expect(vm.totalBalance == 700)
+
+        let deleted = await vm.delete(entry: entry)
+
+        #expect(deleted)
+        #expect(vm.filteredEntries.isEmpty)
+        #expect(vm.totalBalance == 1000)
+        #expect(vm.monthExpense == 0)
+        #expect(vm.recentlyDeleted?.id == entry.id)
+    }
+
+    @Test func отмена_удаления_возвращает_операцию() async {
+        let account = AccountModel.makeTest(initialBalance: 1000)
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = [account]
+        let entry = EntryModel.makeTest(type: .expense, amount: 300, from: account)
+        let entryRepo = MockEntryRepository()
+        entryRepo.entries = [entry]
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        await vm.load()
+        await vm.delete(entry: entry)
+
+        await vm.undoDelete()
+
+        #expect(vm.filteredEntries.map(\.id) == [entry.id])
+        #expect(vm.totalBalance == 700)
+        #expect(vm.recentlyDeleted == nil)
+    }
+
+    @Test func ошибка_удаления_оставляет_операцию_и_показывает_ошибку() async {
+        let entry = EntryModel.makeTest(type: .expense, amount: 300)
+        let entryRepo = MockEntryRepository()
+        entryRepo.entries = [entry]
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        await vm.load()
+        entryRepo.shouldThrow = true
+
+        let deleted = await vm.delete(entry: entry)
+
+        #expect(!deleted)
+        #expect(vm.errorMessage != nil)
+        #expect(vm.filteredEntries.count == 1)
+        #expect(vm.recentlyDeleted == nil)
+    }
+
+    // MARK: - Заметка «#…» (§4.2)
+
+    @Test func поиск_с_решёткой_находит_по_заметке() async {
+        var entry = EntryModel.makeTest(type: .expense, amount: 100)
+        entry.note = "Кофе с собой"
+        let entryRepo = MockEntryRepository()
+        entryRepo.entries = [entry, .makeTest(type: .expense, amount: 200)]
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        await vm.load()
+
+        vm.searchQuery = "#кофе"
+
+        #expect(vm.filteredEntries.map(\.id) == [entry.id])
+    }
+
+    @Test func заметка_в_ленте_с_решёткой_в_одну_строку() {
+        var entry = EntryModel.makeTest(type: .expense, amount: 100)
+        #expect(entry.displayNote == nil)
+        entry.note = "  "
+        #expect(entry.displayNote == nil)
+        entry.note = "кофе\nс собой"
+        #expect(entry.displayNote == "#кофе с собой")
+        entry.note = "#такси"
+        #expect(entry.displayNote == "#такси")
+    }
 }

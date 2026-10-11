@@ -73,9 +73,19 @@ final class MockEntryRepository: EntryRepository {
         entries.append(entry)
     }
 
+    /// Мягко удалённые — для `restore`.
+    var deletedEntries: [EntryModel] = []
+
     func delete(_ id: UUID) async throws {
         if shouldThrow { throw NSError(domain: "test", code: 1) }
+        deletedEntries += entries.filter { $0.id == id }
         entries.removeAll { $0.id == id }
+    }
+
+    func restore(_ id: UUID) async throws {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        entries += deletedEntries.filter { $0.id == id }
+        deletedEntries.removeAll { $0.id == id }
     }
 }
 

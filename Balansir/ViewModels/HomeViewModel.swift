@@ -52,6 +52,8 @@ final class HomeViewModel {
     /// Запрос фокуса на поле поиска (активация жестом): шапка ставит фокус и сбрасывает флаг.
     var shouldFocusSearch: Bool = false
     var errorMessage: String?
+    /// Последняя удалённая операция — пока видна плашка «Удалено · Отменить» (§4.2).
+    private(set) var recentlyDeleted: EntryModel?
 
     // Строка суммы для числового поиска: без разделителей тысяч, запятая ru_RU, без хвостовых нулей («2400,5»).
     private static let amountSearchFormatter: NumberFormatter = {
@@ -91,7 +93,9 @@ final class HomeViewModel {
     /// Лента с учётом фильтра по счёту (карусель) И поискового запроса.
     var filteredEntries: [EntryModel] {
         let byAccount = allEntries.filter(accountMatches)
-        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        var query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Заметка в ленте показана как «#заметка» — запрос с «#» ищет так же, как без него.
+        if query.hasPrefix("#") { query = String(query.dropFirst()).trimmingCharacters(in: .whitespaces) }
         guard !query.isEmpty else { return byAccount }
 
         let needle = normalize(query)
@@ -199,11 +203,36 @@ final class HomeViewModel {
         } catch { errorMessage = error.localizedDescription }
     }
 
-    func delete(entry: EntryModel) async {
+    /// Удаляет операцию и пересчитывает ленту, балансы и сводку. `false` — удалить не удалось.
+    @discardableResult
+    func delete(entry: EntryModel) async -> Bool {
         do {
             try await entryRepo.delete(entry.id)
-            allEntries.removeAll { $0.id == entry.id }
-        } catch { errorMessage = error.localizedDescription }
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+        recentlyDeleted = entry
+        await load()
+        return true
+    }
+
+    /// «Отменить» на плашке: возвращает последнюю удалённую операцию.
+    func undoDelete() async {
+        guard let entry = recentlyDeleted else { return }
+        recentlyDeleted = nil
+        do {
+            try await entryRepo.restore(entry.id)
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+        await load()
+    }
+
+    /// Плашка отмены скрыта (истекло время или начато другое действие).
+    func dismissUndo() {
+        recentlyDeleted = nil
     }
 
     func makeAddEntryViewModel(for entry: EntryModel? = nil) -> AddEntryViewModel {

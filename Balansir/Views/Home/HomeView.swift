@@ -8,6 +8,8 @@ struct HomeView: View {
     // Настройки открываются переходом вглубь (push), не шитом (§4.8).
     @State private var showingSettings = false
     @State private var editEntryVM: AddEntryViewModel?
+    // Строка ленты, открытая свайпом (кнопка «Удалить»): одна на всю ленту, скролл её закрывает.
+    @State private var openSwipeRowId: UUID?
 
     // Жест «потянуть вниз» → поиск (§4.1.4) — только на геометрии и фазе скролла, без DragGesture
     // (DragGesture поверх ScrollView ломал прокрутку). overscroll — оттяжка за верхний край.
@@ -56,6 +58,8 @@ struct HomeView: View {
             AddEntryView(viewModel: vm)
         }
         .task { await viewModel.load() }
+        .overlay(alignment: .bottom) { undoToast }
+        .animation(.snappy, value: viewModel.recentlyDeleted?.id)
         .alert("Ошибка", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -63,6 +67,26 @@ struct HomeView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+    }
+
+    // MARK: - Отмена удаления
+
+    /// Плашка «Операция удалена · Отменить» после удаления свайпом (§4.2).
+    @ViewBuilder
+    private var undoToast: some View {
+        if let deleted = viewModel.recentlyDeleted {
+            UndoToast(title: "Операция удалена") {
+                Task { await viewModel.undoDelete() }
+            }
+            .padding(.horizontal, Theme.Spacing.l)
+            .padding(.bottom, Theme.Spacing.s)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            // Новый id — новый отсчёт; уход с экрана отменяет таймер.
+            .task(id: deleted.id) {
+                guard (try? await Task.sleep(for: .seconds(Theme.Swipe.undoDuration))) != nil else { return }
+                viewModel.dismissUndo()
+            }
         }
     }
 
@@ -86,6 +110,12 @@ struct HomeView: View {
             geometry.contentOffset.y + geometry.contentInsets.top
         } action: { _, offset in
             scrollMetrics.offset = offset
+        }
+        // Верхний inset (статус-бар): лента рисуется и под ним, строка там тоже видна.
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentInsets.top
+        } action: { _, inset in
+            scrollMetrics.topInset = inset
         }
         .onChange(of: isSearchFocused) { _, focused in
             handleSearchFocusChange(focused)
@@ -111,12 +141,6 @@ struct HomeView: View {
         VStack(spacing: 0) {
             feedItems
                 .padding(.bottom, Theme.Spacing.s)
-        // Верхний inset (статус-бар): лента рисуется и под ним, строка там тоже видна.
-        .onScrollGeometryChange(for: CGFloat.self) { geometry in
-            geometry.contentInsets.top
-        } action: { _, inset in
-            scrollMetrics.topInset = inset
-        }
 
             // Шапка, счета и операции — выше и в эту зону не входят.
             if viewModel.isSearchActive {
@@ -165,11 +189,12 @@ struct HomeView: View {
                 ForEach(viewModel.entriesByDay) { group in
                     DaySection(
                         group: group,
+                        openRowId: $openSwipeRowId,
                         onTap: { entry in
                             editEntryVM = viewModel.makeAddEntryViewModel(for: entry)
                         },
                         onDelete: { entry in
-                            Task { await viewModel.delete(entry: entry) }
+                            await viewModel.delete(entry: entry)
                         }
                     )
                     .padding(.top, Theme.Spacing.xl)
@@ -194,6 +219,8 @@ struct HomeView: View {
     private func handleScrollPhase(from oldPhase: ScrollPhase, to newPhase: ScrollPhase) {
         scrollPhase = newPhase
         isInteracting = newPhase == .interacting
+        // Вертикальный скролл закрывает открытую свайпом строку (как в списках iOS).
+        if newPhase == .interacting, openSwipeRowId != nil { openSwipeRowId = nil }
         if newPhase == .idle, pendingClose {
             pendingClose = false
             // Не внутри обработчика скролла: после отскока у края SwiftUI применяет изменения
@@ -410,5 +437,5 @@ struct HomeView: View {
 /// Хранилище смещения ленты без наблюдения SwiftUI (см. `scrollMetrics`).
 private final class ScrollMetrics {
     var offset: CGFloat = 0
-}
     var topInset: CGFloat = 0
+}

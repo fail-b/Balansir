@@ -4,8 +4,11 @@ import SwiftUI
 /// и карточка со строками операций. Используется на Главной и в Операциях.
 struct DaySection: View {
     let group: DayGroup
+    /// Открытая свайпом строка ленты — одна на всю ленту.
+    @Binding var openRowId: UUID?
     let onTap: (EntryModel) -> Void
-    let onDelete: (EntryModel) -> Void
+    /// Удаление; `false` — не удалось, строка возвращается на место.
+    let onDelete: (EntryModel) async -> Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.s) {
@@ -29,9 +32,11 @@ struct DaySection: View {
             VStack(spacing: 0) {
                 ForEach(Array(group.entries.enumerated()), id: \.element.id) { idx, entry in
                     SwipeToDeleteRow(
+                        id: entry.id,
+                        openRowId: $openRowId,
                         content: { EntryRow(entry: entry, isLast: idx == group.entries.count - 1) },
                         onTap: { onTap(entry) },
-                        onDelete: { onDelete(entry) }
+                        onDelete: { await onDelete(entry) }
                     )
                 }
             }

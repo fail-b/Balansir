@@ -6,15 +6,26 @@ struct EntryRow: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
+            HStack(spacing: Theme.Spacing.m) {
                 iconView
-                    .frame(width: 40, height: 40)
+                    .frame(width: Theme.Row.iconSize, height: Theme.Row.iconSize)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.displayTitle)
-                        .font(Theme.Font.rowTitle)
-                        .foregroundStyle(Theme.Colors.ink)
-                    Text(subtitle)
+                VStack(alignment: .leading, spacing: Theme.Row.textSpacing) {
+                    // Название и заметка «#…» в одной строке; не помещается — обрезается заметка.
+                    HStack(spacing: Theme.Spacing.xs) {
+                        Text(entry.displayTitle)
+                            .font(Theme.Font.rowTitle)
+                            .foregroundStyle(Theme.Colors.ink)
+                            .lineLimit(1)
+                            .layoutPriority(1)
+                        if let note = entry.displayNote {
+                            Text(note)
+                                .font(Theme.Font.rowNote)
+                                .foregroundStyle(Theme.Colors.ink3)
+                                .lineLimit(1)
+                        }
+                    }
+                    Text(entry.displayAccount)
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Colors.ink2)
                         .lineLimit(1)
@@ -22,7 +33,7 @@ struct EntryRow: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: Theme.Row.textSpacing) {
                     Text(amountString)
                         .font(Theme.Font.rowAmount)
                         .foregroundStyle(amountColor)
@@ -30,15 +41,17 @@ struct EntryRow: View {
                         .font(Theme.Font.time)
                         .foregroundStyle(Theme.Colors.ink2)
                 }
+                // Сумма и время не ужимаются длинной заметкой.
+                .fixedSize(horizontal: true, vertical: false)
             }
             .padding(.horizontal, Theme.Spacing.l)
-            .padding(.vertical, 10)
+            .padding(.vertical, Theme.Row.verticalPadding)
 
             if !isLast {
                 Rectangle()
                     .fill(Theme.Colors.separator)
-                    .frame(height: 0.5)
-                    .padding(.leading, 68)
+                    .frame(height: Theme.Size.hairline)
+                    .padding(.leading, Theme.Row.separatorInset)
             }
         }
     }
@@ -50,23 +63,15 @@ struct EntryRow: View {
                 .fill(Theme.Colors.fill)
                 .overlay {
                     AppIcon.image(named: AppIcon.transfer)
-                        .font(.system(size: 18))
+                        .font(Theme.Font.rowIcon)
                         .foregroundStyle(Theme.Colors.transfer)
                 }
         } else if let category = entry.category {
-            CategoryIcon(category: category, size: 40)
+            CategoryIcon(category: category, size: Theme.Row.iconSize)
         } else {
             Circle()
                 .fill(Theme.Colors.fill)
         }
-    }
-
-    private var subtitle: String {
-        let account = entry.displayAccount
-        if let note = entry.note, !note.isEmpty {
-            return "\(account) · \(note)"
-        }
-        return account
     }
 
     private var amountString: String {

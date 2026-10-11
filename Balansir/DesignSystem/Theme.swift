@@ -8,6 +8,8 @@ enum Theme {
         static let card = Color("Colors/card")
         static let ink = Color("Colors/ink")
         static let ink2 = Color("Colors/ink2")
+        /// Третичный текст: заметка «#…» в строке операции (§4.2). Светлее `ink2`.
+        static let ink3 = Color("Colors/ink3")
         static let separator = Color("Colors/separator")
         static let fill = Color("Colors/fill")
         static let fill2 = Color("Colors/fill2")
@@ -44,6 +46,30 @@ enum Theme {
         static let hairline: CGFloat = 0.5
         /// Минимальный масштаб сумм в сводке у таб-бара — длинная сумма ужимается, а не обрезается.
         static let summaryMinScale: CGFloat = 0.7
+    }
+
+    /// Строка операции `EntryRow` (§4.2).
+    enum Row {
+        /// Иконка категории/перевода.
+        static let iconSize: CGFloat = 40
+        /// Вертикальный паддинг строки.
+        static let verticalPadding: CGFloat = 10
+        /// Зазор между названием и подписью, суммой и временем.
+        static let textSpacing: CGFloat = 2
+        /// Отступ разделителя слева: паддинг 16 + иконка 40 + зазор 12.
+        static let separatorInset: CGFloat = 68
+    }
+
+    /// Свайп влево по строке операции → удаление (§4.2).
+    enum Swipe {
+        /// Ширина открытой кнопки «Удалить».
+        static let actionWidth: CGFloat = 88
+        /// Длинный свайп: доля ширины строки, за которой отпускание удаляет операцию.
+        static let fullSwipeFraction: CGFloat = 0.5
+        /// Строка уезжает влево перед удалением, с.
+        static let removeDuration: Double = 0.2
+        /// Сколько висит плашка «Удалено · Отменить», с.
+        static let undoDuration: Double = 4
     }
 
     /// Экран «Статистика» (§4.4).
@@ -124,8 +150,16 @@ enum Theme {
         static let sectionTitle = SwiftUI.Font.system(size: 15, weight: .semibold)
         static let rowTitle = SwiftUI.Font.system(size: 16, weight: .medium)
         static let rowAmount = SwiftUI.Font.system(size: 16, weight: .semibold)
+        /// Заметка «#…» в строке операции — в одной строке с названием, но не жирная.
+        static let rowNote = SwiftUI.Font.system(size: 16)
         static let caption = SwiftUI.Font.system(size: 13)
         static let time = SwiftUI.Font.system(size: 12)
+        /// Иконка перевода в строке операции и корзина в свайпе.
+        static let rowIcon = SwiftUI.Font.system(size: 18)
+        static let swipeActionIcon = SwiftUI.Font.system(size: 18)
+        /// Плашка «Удалено · Отменить».
+        static let toast = SwiftUI.Font.system(size: 15, weight: .medium)
+        static let toastAction = SwiftUI.Font.system(size: 15, weight: .semibold)
         /// Подпись версии внизу Настроек (§4.8).
         static let appVersion = SwiftUI.Font.system(size: 12)
         static let searchField = SwiftUI.Font.system(size: 17)
