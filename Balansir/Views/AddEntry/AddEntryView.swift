@@ -6,6 +6,10 @@ struct AddEntryView: View {
 
     @State private var path: [AccountPickerTarget] = []
     @State private var showDatePicker = false
+    /// Фокус поля «Заметка». Пока он есть — вместо своей цифровой клавиатуры системная,
+    /// а «Сохранить» остаётся над ней (правило «минимум тапов»).
+    @FocusState private var isNoteFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -35,23 +39,40 @@ struct AddEntryView: View {
     private var mainContent: some View {
         VStack(spacing: 0) {
             header
-            typeSegment
-                .padding(.top, Theme.Spacing.l)
-            amountView
-                .padding(.top, Theme.Spacing.xl)
-            card
-                .padding(.top, Theme.Spacing.l)
-            Spacer(minLength: Theme.Spacing.l)
-            NumpadView(
-                onDigit: { viewModel.inputDigit($0) },
-                onSeparator: { viewModel.inputSeparator() },
-                onBackspace: { viewModel.backspace() }
-            )
+            // Верх прокручивается, если над системной клавиатурой не хватает места (маленькие iPhone),
+            // при этом «Сохранить» остаётся видимой.
+            ScrollView {
+                VStack(spacing: 0) {
+                    typeSegment
+                        .padding(.top, Theme.Spacing.l)
+                    amountView
+                        .padding(.top, Theme.Spacing.xl)
+                    card
+                        .padding(.top, Theme.Spacing.l)
+                }
+                .padding(.bottom, Theme.Spacing.l)
+            }
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
+            if !isNoteFocused {
+                NumpadView(
+                    onDigit: { viewModel.inputDigit($0) },
+                    onSeparator: { viewModel.inputSeparator() },
+                    onBackspace: { viewModel.backspace() }
+                )
+                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            }
             saveButton
                 .padding(.top, Theme.Spacing.m)
         }
+        .animation(reduceMotion ? nil : Theme.Animation.numpadToggle, value: isNoteFocused)
         .padding(.horizontal, Theme.Spacing.l)
         .padding(.bottom, Theme.Spacing.s)
+        // Тап в любое место мимо поля «Заметка» прячет системную клавиатуру
+        // и возвращает цифровую. Кнопки и само поле обрабатывают свои тапы раньше.
+        .contentShape(Rectangle())
+        .onTapGesture { isNoteFocused = false }
         .background(Theme.Colors.background)
     }
 
@@ -79,7 +100,10 @@ struct AddEntryView: View {
     }
 
     private var dateChip: some View {
-        Button { showDatePicker = true } label: {
+        Button {
+            isNoteFocused = false
+            showDatePicker = true
+        } label: {
             HStack(spacing: 6) {
                 AppIcon.image(named: AppIcon.calendar).font(.system(size: 15))
                 Text(dateLabel).font(.system(size: 15, weight: .medium))
@@ -130,6 +154,7 @@ struct AddEntryView: View {
             ForEach(EntryType.allCases, id: \.self) { type in
                 let isActive = viewModel.selectedType == type
                 Button {
+                    isNoteFocused = false
                     viewModel.selectedType = type
                     viewModel.onTypeChanged()
                 } label: {
@@ -167,6 +192,7 @@ struct AddEntryView: View {
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(Theme.Colors.ink2)
             caret
+                .opacity(isNoteFocused ? 0 : 1)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -219,6 +245,7 @@ struct AddEntryView: View {
     private func categoryCell(_ category: CategoryModel) -> some View {
         let isSelected = viewModel.selectedCategory?.id == category.id
         return Button {
+            isNoteFocused = false
             viewModel.selectedCategory = category
         } label: {
             VStack(spacing: 6) {
@@ -243,6 +270,7 @@ struct AddEntryView: View {
     private func accountRow(target: AccountPickerTarget, label: String) -> some View {
         let account = target == .from ? viewModel.selectedAccount : viewModel.selectedToAccount
         return Button {
+            isNoteFocused = false
             path.append(target)
         } label: {
             HStack(spacing: Theme.Spacing.m) {
@@ -275,9 +303,14 @@ struct AddEntryView: View {
             TextField("Заметка", text: $viewModel.note)
                 .font(Theme.Font.rowTitle)
                 .foregroundStyle(Theme.Colors.ink)
+                .focused($isNoteFocused)
+                .submitLabel(.done)
+                .onSubmit { isNoteFocused = false }
         }
         .padding(.horizontal, Theme.Spacing.l)
         .padding(.vertical, Theme.Spacing.m)
+        .contentShape(Rectangle())
+        .onTapGesture { isNoteFocused = true }
     }
 
     // MARK: - Сохранить

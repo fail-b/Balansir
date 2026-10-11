@@ -54,6 +54,8 @@ enum Theme {
     enum Animation {
         /// Морфинг лупы в строку поиска на Главной (§4.1.4): spring ~0.35 с, damping 0.8.
         static let searchMorph: SwiftUI.Animation = .spring(response: 0.35, dampingFraction: 0.8)
+        /// Смена своей цифровой клавиатуры на системную в шите операции (§4.7).
+        static let numpadToggle: SwiftUI.Animation = .easeInOut(duration: 0.25)
     }
 
     enum Spacing {
