@@ -15,6 +15,17 @@ enum StatisticsService {
         calendar.dateInterval(of: .month, for: date)!
     }
 
+    /// Название месяца с заглавной буквы в именительном падеже: «Октябрь».
+    static func monthName(for date: Date, calendar: Calendar, locale: Locale = Locale(identifier: "ru_RU")) -> String {
+        let f = DateFormatter()
+        f.calendar = calendar
+        f.timeZone = calendar.timeZone
+        f.locale = locale
+        f.dateFormat = "LLLL"
+        let s = f.string(from: date)
+        return s.prefix(1).uppercased() + s.dropFirst()
+    }
+
     /// Сумма операций типа `type` внутри интервала.
     static func total(of type: EntryType, in entries: [EntryModel], interval: DateInterval) -> Decimal {
         entries

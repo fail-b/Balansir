@@ -128,7 +128,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             HomeHeader(
                 viewModel: viewModel,
-                monthName: currentMonthName,
+                monthName: viewModel.currentMonthName,
                 pullProgress: pullProgress,
                 searchFocus: $isSearchFocused,
                 onOpenSettings: { settingsVM = viewModel.makeSettingsViewModel() }
@@ -384,14 +384,6 @@ struct HomeView: View {
             viewModel.isSearchActive = false
             scrollPosition.scrollTo(y: offset + heroHeight)
         }
-    }
-
-    private var currentMonthName: String {
-        let f = DateFormatter()
-        f.dateFormat = "LLLL"
-        f.locale = Locale(identifier: "ru_RU")
-        let s = f.string(from: Date())
-        return s.prefix(1).uppercased() + s.dropFirst()
     }
 }
 

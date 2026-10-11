@@ -78,6 +78,11 @@ final class HomeViewModel {
         accounts.reduce(Decimal(0)) { $0 + (balances[$1.id] ?? 0) }
     }
 
+    /// Название текущего месяца для шапки Главной и сводки таб-бара: «Октябрь».
+    var currentMonthName: String {
+        StatisticsService.monthName(for: Date(), calendar: .current)
+    }
+
     /// Среднее в день за текущий месяц (сегодняшний день входит в число дней).
     var monthDailyAverage: Decimal {
         StatisticsService.dailyAverage(total: monthExpense, today: Date(), calendar: .current)

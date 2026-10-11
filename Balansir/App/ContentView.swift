@@ -52,7 +52,8 @@ struct ContentView: View {
             Tab(value: AppTab.add, role: .search) {
                 Color.clear
             } label: {
-                tabLabel("Добавить", icon: AppIcon.add)
+                // Круг остаётся системным стеклом, плюс — акцентным (решение владельца 2026-10-11).
+                tabLabel("Добавить", icon: AppIcon.add, tint: Theme.Colors.accent)
             }
         }
         .tint(Theme.Colors.accent)
@@ -80,11 +81,16 @@ struct ContentView: View {
         )
     }
 
-    private func tabLabel(_ title: String, icon: String) -> some View {
+    private func tabLabel(_ title: String, icon: String, tint: Color? = nil) -> some View {
         Label {
             Text(title)
         } icon: {
-            AppIcon.image(named: icon)
+            if let tint {
+                AppIcon.image(named: icon)
+                    .foregroundStyle(tint)
+            } else {
+                AppIcon.image(named: icon)
+            }
         }
     }
 

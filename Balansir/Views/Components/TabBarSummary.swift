@@ -1,17 +1,17 @@
 import SwiftUI
 
-/// Сводка рядом со свёрнутым таб-баром (`tabViewBottomAccessory`), см. ТЗ §3 и `02-home-scrolled-minibar`.
+/// Сводка рядом со свёрнутым таб-баром (`tabViewBottomAccessory`), см. дизайн-задание §3.
+/// Две колонки «подпись над суммой»: основная слева, вторая справа.
 /// Стекло и форму капсулы рисует система — здесь только содержимое.
 struct TabBarSummary: View {
     let selectedTab: AppTab
     let homeVM: HomeViewModel
 
     var body: some View {
-        content
-            .font(Theme.Font.caption)
-            .monospacedDigit()
-            .lineLimit(1)
-            .padding(.horizontal, Theme.Spacing.l)
+        HStack(alignment: .center, spacing: Theme.Spacing.s) {
+            content
+        }
+        .padding(.horizontal, Theme.Spacing.xl)
     }
 
     @ViewBuilder
@@ -19,47 +19,26 @@ struct TabBarSummary: View {
         switch selectedTab {
         case .home, .add:
             if homeVM.isSearchActive && !searchQueryEmpty {
-                HStack {
-                    Text("Найдено \(homeVM.searchResultCount)")
-                        .foregroundStyle(Theme.Colors.ink)
-                    Spacer(minLength: Theme.Spacing.s)
-                    Text(expenseString(homeVM.searchResultExpense))
-                        .foregroundStyle(Theme.Colors.ink2)
-                }
+                SummaryColumn(label: "Найдено", value: "\(homeVM.searchResultCount)", isPrimary: true)
+                Spacer(minLength: Theme.Spacing.s)
+                SummaryColumn(label: "Расходы", value: expenseString(homeVM.searchResultExpense), isPrimary: false)
             } else {
-                HStack {
-                    Text("Сегодня \(expenseString(homeVM.todayExpense))")
-                        .foregroundStyle(Theme.Colors.ink)
-                    Spacer(minLength: Theme.Spacing.s)
-                    Text("\(currentMonthName) \(expenseString(homeVM.monthExpense))")
-                        .foregroundStyle(Theme.Colors.ink2)
-                }
+                SummaryColumn(label: "Сегодня", value: expenseString(homeVM.todayExpense), isPrimary: true)
+                Spacer(minLength: Theme.Spacing.s)
+                SummaryColumn(label: homeVM.currentMonthName, value: expenseString(homeVM.monthExpense), isPrimary: false)
             }
         case .statistics:
-            HStack {
-                Text("\(currentMonthName) \(MoneyFormatter.format(homeVM.monthExpense))")
-                    .foregroundStyle(Theme.Colors.ink)
-                Spacer(minLength: Theme.Spacing.s)
-                Text("В день \(MoneyFormatter.format(homeVM.monthDailyAverage))")
-                    .foregroundStyle(Theme.Colors.ink2)
-            }
+            SummaryColumn(label: homeVM.currentMonthName, value: MoneyFormatter.format(homeVM.monthExpense), isPrimary: true)
+            Spacer(minLength: Theme.Spacing.s)
+            SummaryColumn(label: "В день", value: MoneyFormatter.format(homeVM.monthDailyAverage), isPrimary: false)
         case .accounts:
-            Text("Всего на счетах \(balanceString(homeVM.totalBalance))")
-                .foregroundStyle(Theme.Colors.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            SummaryColumn(label: "Всего на счетах", value: balanceString(homeVM.totalBalance), isPrimary: true)
+            Spacer(minLength: 0)
         }
     }
 
     private var searchQueryEmpty: Bool {
         homeVM.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private var currentMonthName: String {
-        let f = DateFormatter()
-        f.dateFormat = "LLLL"
-        f.locale = Locale(identifier: "ru_RU")
-        let s = f.string(from: Date())
-        return s.prefix(1).uppercased() + s.dropFirst()
     }
 
     private func expenseString(_ amount: Decimal) -> String {
@@ -68,5 +47,27 @@ struct TabBarSummary: View {
 
     private func balanceString(_ amount: Decimal) -> String {
         amount < 0 ? "\u{2212}\(MoneyFormatter.format(amount))" : MoneyFormatter.format(amount)
+    }
+}
+
+/// Колонка сводки: подпись (13, `ink2`) над суммой.
+/// Основная — слева, сумма крупная `ink`; вторая — справа, сумма меньше и `ink2`.
+private struct SummaryColumn: View {
+    let label: String
+    let value: String
+    let isPrimary: Bool
+
+    var body: some View {
+        VStack(alignment: isPrimary ? .leading : .trailing, spacing: Theme.Spacing.xxs) {
+            Text(label)
+                .font(Theme.Font.summaryLabel)
+                .foregroundStyle(Theme.Colors.ink2)
+            Text(value)
+                .font(isPrimary ? Theme.Font.summaryValue : Theme.Font.summarySecondary)
+                .foregroundStyle(isPrimary ? Theme.Colors.ink : Theme.Colors.ink2)
+                .minimumScaleFactor(Theme.Size.summaryMinScale)
+        }
+        .lineLimit(1)
+        .accessibilityElement(children: .combine)
     }
 }

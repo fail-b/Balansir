@@ -42,6 +42,8 @@ enum Theme {
         static let bottomAccessoryClearance: CGFloat = 56
         /// Толщина разделителя строк в карточках-списках.
         static let hairline: CGFloat = 0.5
+        /// Минимальный масштаб сумм в сводке у таб-бара — длинная сумма ужимается, а не обрезается.
+        static let summaryMinScale: CGFloat = 0.7
     }
 
     /// Экран «Статистика» (§4.4).
@@ -80,6 +82,8 @@ enum Theme {
     }
 
     enum Spacing {
+        /// Зазор между подписью и суммой в сводке у таб-бара.
+        static let xxs: CGFloat = 1
         static let xs: CGFloat = 4
         static let s: CGFloat = 8
         static let m: CGFloat = 12
@@ -124,6 +128,10 @@ enum Theme {
         static let time = SwiftUI.Font.system(size: 12)
         static let searchField = SwiftUI.Font.system(size: 17)
         static let tabLabel = SwiftUI.Font.system(size: 10, weight: .semibold)
+        /// Сводка у таб-бара (§3): подпись над суммой, основная сумма слева, вторая справа.
+        static let summaryLabel = SwiftUI.Font.system(size: 13)
+        static let summaryValue = SwiftUI.Font.system(size: 20, weight: .bold).monospacedDigit()
+        static let summarySecondary = SwiftUI.Font.system(size: 17, weight: .medium).monospacedDigit()
 
         // Трекинг применяется через .tracking() на Text-view
         enum Tracking {

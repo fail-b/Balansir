@@ -34,6 +34,12 @@ struct StatisticsServiceTests {
     private let cal = StatsFixture.calendar
     private var october: DateInterval { StatisticsService.monthInterval(containing: StatsFixture.today, calendar: cal) }
 
+    @Test("Название месяца — с заглавной, в именительном падеже")
+    func monthName() {
+        #expect(StatisticsService.monthName(for: StatsFixture.today, calendar: cal) == "Октябрь")
+        #expect(StatisticsService.monthName(for: StatsFixture.date(5, 3), calendar: cal) == "Май")
+    }
+
     @Test func месяц_от_первого_числа_до_первого_числа_следующего() {
         #expect(october.start == cal.date(from: DateComponents(year: 2026, month: 10, day: 1))!)
         #expect(october.end == cal.date(from: DateComponents(year: 2026, month: 11, day: 1))!)
