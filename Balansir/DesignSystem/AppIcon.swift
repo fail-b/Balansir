@@ -24,6 +24,7 @@ enum AppIcon {
     static let transfer = "arrow.left.arrow.right"
     static let backspace = "delete.left"
     static let export = "square.and.arrow.up"
+    static let importData = "square.and.arrow.down"
     static let trash = "trash"
 
     // Категории (пикеры)

@@ -254,7 +254,7 @@ struct AddEntryView: View {
                     if isSelected {
                         Circle().strokeBorder(Theme.Colors.accent, lineWidth: 2)
                     }
-                    CategoryIcon(category: category, style: .dot, size: 46)
+                    CategoryIcon(category: category, size: 46)
                 }
                 .frame(width: 52, height: 52)
                 Text(category.name)

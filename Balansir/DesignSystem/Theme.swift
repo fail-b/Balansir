@@ -126,6 +126,8 @@ enum Theme {
         static let rowAmount = SwiftUI.Font.system(size: 16, weight: .semibold)
         static let caption = SwiftUI.Font.system(size: 13)
         static let time = SwiftUI.Font.system(size: 12)
+        /// Подпись версии внизу Настроек (§4.8).
+        static let appVersion = SwiftUI.Font.system(size: 12)
         static let searchField = SwiftUI.Font.system(size: 17)
         static let tabLabel = SwiftUI.Font.system(size: 10, weight: .semibold)
         /// Сводка у таб-бара (§3): подпись над суммой, основная сумма слева, вторая справа.

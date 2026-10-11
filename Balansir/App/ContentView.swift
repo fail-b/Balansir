@@ -10,7 +10,7 @@ enum AppTab: Hashable {
 struct ContentView: View {
     @State private var homeVM: HomeViewModel
     @State private var statisticsVM: StatisticsViewModel
-    @State private var settingsVM: SettingsViewModel
+    @State private var accountsVM: AccountsViewModel
 
     @State private var selectedTab: AppTab = .home
     @State private var addEntryVM: AddEntryViewModel?
@@ -22,7 +22,7 @@ struct ContentView: View {
          entryRepo: any EntryRepository) {
         _homeVM = State(wrappedValue: HomeViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
         _statisticsVM = State(wrappedValue: StatisticsViewModel(entryRepo: entryRepo))
-        _settingsVM = State(wrappedValue: SettingsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
+        _accountsVM = State(wrappedValue: AccountsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
     }
 
     var body: some View {
@@ -30,7 +30,9 @@ struct ContentView: View {
         // сворачивание при скролле. Свой FloatingTabBar больше не используется.
         TabView(selection: tabSelection) {
             Tab(value: AppTab.home) {
-                HomeView(viewModel: homeVM, selectedTab: $selectedTab, isScrolled: $isScrolled)
+                NavigationStack {
+                    HomeView(viewModel: homeVM, selectedTab: $selectedTab, isScrolled: $isScrolled)
+                }
             } label: {
                 tabLabel("Главная", icon: AppIcon.tabHome)
             }
@@ -42,7 +44,7 @@ struct ContentView: View {
             }
 
             Tab(value: AppTab.accounts) {
-                SettingsView(viewModel: settingsVM, isScrolled: $isScrolled)
+                AccountsView(viewModel: accountsVM, isScrolled: $isScrolled)
             } label: {
                 tabLabel("Счета", icon: AppIcon.tabAccounts)
             }
@@ -98,7 +100,7 @@ struct ContentView: View {
         Task {
             await homeVM.load()
             await statisticsVM.load()
-            await settingsVM.load()
+            await accountsVM.load()
         }
     }
 }

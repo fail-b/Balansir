@@ -5,7 +5,8 @@ struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Binding var isScrolled: Bool
 
-    @State private var settingsVM: SettingsViewModel?
+    // Настройки открываются переходом вглубь (push), не шитом (§4.8).
+    @State private var showingSettings = false
     @State private var editEntryVM: AddEntryViewModel?
 
     // Жест «потянуть вниз» → поиск (§4.1.4) — только на геометрии и фазе скролла, без DragGesture
@@ -42,8 +43,14 @@ struct HomeView: View {
             feed(minHeight: proxy.size.height)
         }
         .background(Theme.Colors.background)
-        .sheet(item: $settingsVM, onDismiss: { Task { await viewModel.load() } }) { vm in
-            SettingsView(viewModel: vm, isScrolled: .constant(false))
+        // Своя шапка вместо навбара; стек нужен только для перехода в Настройки.
+        .toolbarVisibility(.hidden, for: .navigationBar)
+        .navigationDestination(isPresented: $showingSettings) {
+            SettingsView()
+        }
+        // В Настройках нет ленты — прячем сводку у таб-бара, пока экран открыт.
+        .onChange(of: showingSettings) { _, isShown in
+            if isShown { isScrolled = false }
         }
         .sheet(item: $editEntryVM, onDismiss: { Task { await viewModel.load() } }) { vm in
             AddEntryView(viewModel: vm)
@@ -104,6 +111,12 @@ struct HomeView: View {
         VStack(spacing: 0) {
             feedItems
                 .padding(.bottom, Theme.Spacing.s)
+        // Верхний inset (статус-бар): лента рисуется и под ним, строка там тоже видна.
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentInsets.top
+        } action: { _, inset in
+            scrollMetrics.topInset = inset
+        }
 
             // Шапка, счета и операции — выше и в эту зону не входят.
             if viewModel.isSearchActive {
@@ -131,7 +144,7 @@ struct HomeView: View {
                 monthName: viewModel.currentMonthName,
                 pullProgress: pullProgress,
                 searchFocus: $isSearchFocused,
-                onOpenSettings: { settingsVM = viewModel.makeSettingsViewModel() }
+                onOpenSettings: { showingSettings = true }
             )
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
 
@@ -183,7 +196,15 @@ struct HomeView: View {
         isInteracting = newPhase == .interacting
         if newPhase == .idle, pendingClose {
             pendingClose = false
-            closeSearchKeepingPosition()
+            // Не внутри обработчика скролла: после отскока у края SwiftUI применяет изменения
+            // из этого колбэка без анимации. На следующем такте withAnimation срабатывает.
+            DispatchQueue.main.async {
+                guard scrollPhase == .idle else {
+                    pendingClose = true
+                    return
+                }
+                closeSearchKeepingPosition()
+            }
         }
         guard oldPhase == .interacting, newPhase != .interacting else { return }
         let shouldActivate = reachedThreshold && !viewModel.isSearchActive
@@ -198,7 +219,7 @@ struct HomeView: View {
             selectedTab = .statistics
         } label: {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top) {
+                HStack(alignment: .lastTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Расходы")
                             .font(Theme.Font.caption)
@@ -365,11 +386,10 @@ struct HomeView: View {
     private func closeSearchKeepingPosition() {
         guard viewModel.isSearchActive, searchQueryEmpty else { return }
         let offset = scrollMetrics.offset
-        guard offset > 1 else {
-            closeSearch()
-            return
-        }
-        let searchBarVisible = offset < headerHeight
+        // Видна ли шапка хоть частично — с учётом полосы под статус-баром.
+        let searchBarVisible = offset < headerHeight + scrollMetrics.topInset
+        // Строка видна (в т.ч. лента у самого верха) — одна анимированная ветка:
+        // морфинг строки в лупу, выезд hero и плавный возврат ленты к верху.
         guard !searchBarVisible, heroHeight > 0 else {
             isSearchFocused = false
             withAnimation(reduceMotion ? nil : Theme.Animation.searchMorph) {
@@ -391,3 +411,4 @@ struct HomeView: View {
 private final class ScrollMetrics {
     var offset: CGFloat = 0
 }
+    var topInset: CGFloat = 0

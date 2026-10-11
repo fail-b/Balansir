@@ -2,16 +2,16 @@ import Testing
 import Foundation
 @testable import Balansir
 
-@Suite("SettingsViewModel")
+@Suite("AccountsViewModel")
 @MainActor
-struct SettingsViewModelTests {
+struct AccountsViewModelTests {
 
     @Test func load_заполняет_счета_и_категории() async {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [.makeTest(name: "Счёт 1"), .makeTest(name: "Счёт 2")]
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [.makeTest(name: "Еда"), .makeTest(name: "Зарплата", type: .income)]
-        let vm = SettingsViewModel(
+        let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: categoryRepo,
             entryRepo: MockEntryRepository()
@@ -27,7 +27,7 @@ struct SettingsViewModelTests {
         accountRepo.accounts = [account]
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [.makeTest(type: .expense, amount: 300, from: account)]
-        let vm = SettingsViewModel(
+        let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: MockCategoryRepository(),
             entryRepo: entryRepo
@@ -43,7 +43,7 @@ struct SettingsViewModelTests {
             .makeTest(name: "Транспорт", type: .expense),
             .makeTest(name: "Зарплата", type: .income),
         ]
-        let vm = SettingsViewModel(
+        let vm = AccountsViewModel(
             accountRepo: MockAccountRepository(),
             categoryRepo: categoryRepo,
             entryRepo: MockEntryRepository()
@@ -59,7 +59,7 @@ struct SettingsViewModelTests {
         let account = AccountModel.makeTest()
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [account]
-        let vm = SettingsViewModel(
+        let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: MockCategoryRepository(),
             entryRepo: MockEntryRepository()
@@ -73,7 +73,7 @@ struct SettingsViewModelTests {
         let category = CategoryModel.makeTest()
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [category]
-        let vm = SettingsViewModel(
+        let vm = AccountsViewModel(
             accountRepo: MockAccountRepository(),
             categoryRepo: categoryRepo,
             entryRepo: MockEntryRepository()
@@ -86,7 +86,7 @@ struct SettingsViewModelTests {
     @Test func ошибка_репозитория_устанавливает_errorMessage() async {
         let accountRepo = MockAccountRepository()
         accountRepo.shouldThrow = true
-        let vm = SettingsViewModel(
+        let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: MockCategoryRepository(),
             entryRepo: MockEntryRepository()

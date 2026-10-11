@@ -4,6 +4,8 @@ import CoreData
 @main
 struct BalansirApp: App {
     private let persistence = PersistenceController.shared
+    // Тема из Настроек (§4.8): меняется сразу, без перезапуска.
+    @AppStorage(AppSettingsKey.appearance) private var appearance: AppearanceMode = .system
 
     var body: some Scene {
         WindowGroup {
@@ -12,6 +14,7 @@ struct BalansirApp: App {
                 categoryRepo: CoreDataCategoryRepository(context: persistence.container.viewContext),
                 entryRepo: CoreDataEntryRepository(context: persistence.container.viewContext)
             )
+            .preferredColorScheme(appearance.colorScheme)
         }
     }
 }

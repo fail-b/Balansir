@@ -4,8 +4,6 @@ struct EntryRow: View {
     let entry: EntryModel
     var isLast: Bool = false
 
-    @AppStorage("categoryIconStyle") private var iconStyle: CategoryIconStyle = .dot
-
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -56,7 +54,7 @@ struct EntryRow: View {
                         .foregroundStyle(Theme.Colors.transfer)
                 }
         } else if let category = entry.category {
-            CategoryIcon(category: category, style: iconStyle, size: 40)
+            CategoryIcon(category: category, size: 40)
         } else {
             Circle()
                 .fill(Theme.Colors.fill)

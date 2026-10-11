@@ -1,113 +1,105 @@
 import SwiftUI
 
+/// Настройки (§4.8): открываются переходом вглубь по шестерёнке с Главной и Счетов.
+/// Данных из репозиториев экран не читает, поэтому без ViewModel: всё хранится в `@AppStorage`.
+/// Пока работает только выбор темы, остальное — заглушки.
 struct SettingsView: View {
-    @Bindable var viewModel: SettingsViewModel
-    @Binding var isScrolled: Bool
-
-    @State private var showingAddAccount = false
-    @State private var showingEditAccount = false
-    @State private var addAccountVM: AccountFormViewModel?
-    @State private var editAccountVM: AccountFormViewModel?
-
-    @State private var showingAddCategory = false
-    @State private var showingEditCategory = false
-    @State private var addCategoryVM: CategoryFormViewModel?
-    @State private var editCategoryVM: CategoryFormViewModel?
+    @AppStorage(AppSettingsKey.appearance) private var appearance: AppearanceMode = .system
+    @AppStorage(AppSettingsKey.statsPeriod) private var statsPeriod: StatsPeriod = .month
+    @AppStorage(AppSettingsKey.statsChartKind) private var statsChartKind: StatsChartKind = .bars
+    @AppStorage(AppSettingsKey.statsWeekStart) private var weekStart: WeekStart = .monday
+    @AppStorage(AppSettingsKey.eveningReminder) private var eveningReminder = false
+    @AppStorage(AppSettingsKey.faceID) private var faceID = false
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(viewModel.accounts) { account in
-                        AccountSettingsRow(account: account, balance: viewModel.balances[account.id] ?? 0)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                editAccountVM = viewModel.makeAccountFormViewModel(for: account)
-                                showingEditAccount = true
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    Task { await viewModel.archive(account) }
-                                } label: {
-                                    Label("Скрыть", systemImage: "archivebox")
-                                }
-                            }
-                    }
-                    Button {
-                        addAccountVM = viewModel.makeAccountFormViewModel(for: nil)
-                        showingAddAccount = true
-                    } label: {
-                        Label("Добавить счёт", systemImage: "plus.circle")
-                    }
-                } header: { Text("Счета") }
+        List {
+            Section {
+                Picker("Тема", selection: $appearance) {
+                    ForEach(AppearanceMode.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            } header: { sectionHeader("Тема") }
 
-                Section {
-                    Picker("Тип", selection: $viewModel.selectedCategoryType) {
-                        ForEach(CategoryType.allCases, id: \.self) { type in
-                            Text(type.title).tag(type)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            // Заглушки: экран Статистики эти значения пока не читает.
+            Section {
+                Picker("Период", selection: $statsPeriod) {
+                    ForEach(StatsPeriod.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Вид диаграммы", selection: $statsChartKind) {
+                    ForEach(StatsChartKind.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Начало недели", selection: $weekStart) {
+                    ForEach(WeekStart.allCases) { Text($0.title).tag($0) }
+                }
+            } header: { sectionHeader("Статистика") }
 
-                    ForEach(viewModel.filteredCategories) { category in
-                        HStack(spacing: Theme.Spacing.m) {
-                            ZStack {
-                                Circle()
-                                    .fill((Color(hex: category.colorHex) ?? Theme.Colors.fallback).opacity(0.15))
-                                    .frame(width: 32, height: 32)
-                                AppIcon.image(named: category.iconName)
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(Color(hex: category.colorHex) ?? Theme.Colors.fallback)
-                            }
-                            Text(category.name).font(.callout)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            editCategoryVM = viewModel.makeCategoryFormViewModel(for: category)
-                            showingEditCategory = true
-                        }
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                Task { await viewModel.archive(category) }
-                            } label: {
-                                Label("Скрыть", systemImage: "archivebox")
-                            }
-                        }
+            Section {
+                stubRow("Валюта", value: "Рубль, ₽")
+                stubRow("Начало месяца", value: "1 число")
+            } header: { sectionHeader("Учёт") }
+
+            Section {
+                Toggle(isOn: $eveningReminder) {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
+                        Text("Напоминание вечером")
+                        Text("В 21:00, если за день нет операций")
+                            .font(Theme.Font.caption)
+                            .foregroundStyle(Theme.Colors.ink2)
                     }
-                    Button {
-                        addCategoryVM = viewModel.makeCategoryFormViewModel(for: nil)
-                        showingAddCategory = true
-                    } label: {
-                        Label("Добавить категорию", systemImage: "plus.circle")
-                    }
-                } header: { Text("Категории") }
-            }
-            .listStyle(.insetGrouped)
-            .clearsBottomAccessory()
-            .reportsScroll(to: $isScrolled)
-            .navigationTitle("Настройки")
-            .sheet(isPresented: $showingAddAccount, onDismiss: { Task { await viewModel.load() } }) {
-                if let vm = addAccountVM { AccountFormView(viewModel: vm) }
-            }
-            .sheet(isPresented: $showingEditAccount, onDismiss: { Task { await viewModel.load() } }) {
-                if let vm = editAccountVM { AccountFormView(viewModel: vm) }
-            }
-            .sheet(isPresented: $showingAddCategory, onDismiss: { Task { await viewModel.load() } }) {
-                if let vm = addCategoryVM { CategoryFormView(viewModel: vm) }
-            }
-            .sheet(isPresented: $showingEditCategory, onDismiss: { Task { await viewModel.load() } }) {
-                if let vm = editCategoryVM { CategoryFormView(viewModel: vm) }
-            }
-            .task { await viewModel.load() }
-            .alert("Ошибка", isPresented: Binding(
-                get: { viewModel.errorMessage != nil },
-                set: { if !$0 { viewModel.errorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(viewModel.errorMessage ?? "")
+                }
+                Toggle("Вход по Face ID", isOn: $faceID)
+            } header: { sectionHeader("Напоминания и защита") }
+
+            Section {
+                stubAction("Экспорт в CSV", icon: AppIcon.export)
+                stubAction("Импорт из CoinKeeper", icon: AppIcon.importData)
+                stubAction("Показать приветствие", icon: nil)
+            } header: { sectionHeader("Данные") }
+
+            Section {
+                Text("Balansir \(appVersion)")
+                    .font(Theme.Font.appVersion)
+                    .foregroundStyle(Theme.Colors.ink2)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
             }
         }
+        .listStyle(.insetGrouped)
+        .font(Theme.Font.body)
+        .foregroundStyle(Theme.Colors.ink)
+        .tint(Theme.Colors.accent)
+        .scrollContentBackground(.hidden)
+        .background(Theme.Colors.background)
+        .navigationTitle("Настройки")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(Theme.Font.caption)
+            .foregroundStyle(Theme.Colors.ink2)
+    }
+
+    /// Строка «Название — значение» без действия (пока заглушка).
+    private func stubRow(_ title: String, value: String) -> some View {
+        LabeledContent(title) {
+            Text(value).foregroundStyle(Theme.Colors.ink2)
+        }
+    }
+
+    /// Кнопка-заглушка: видна, но неактивна, пока функция не сделана.
+    private func stubAction(_ title: String, icon: String?) -> some View {
+        Button {} label: {
+            if let icon {
+                Label { Text(title) } icon: { AppIcon.image(named: icon) }
+            } else {
+                Text(title)
+            }
+        }
+        .disabled(true)
     }
 }
