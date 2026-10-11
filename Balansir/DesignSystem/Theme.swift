@@ -40,6 +40,27 @@ enum Theme {
         /// Когда таб-бар свёрнут и мини-бар встаёт в одну строку с ним, система не учитывает
         /// мини-бар в нижнем отступе — без запаса последняя строка уходит под него.
         static let bottomAccessoryClearance: CGFloat = 56
+        /// Толщина разделителя строк в карточках-списках.
+        static let hairline: CGFloat = 0.5
+    }
+
+    /// Экран «Статистика» (§4.4).
+    enum Stats {
+        /// Высота области столбиков по дням.
+        static let chartHeight: CGFloat = 110
+        /// Зазор между столбиками.
+        static let barGap: CGFloat = 3
+        static let barRadius: CGFloat = 2
+        /// Минимальная высота столбика (и высота столбиков будущих дней).
+        static let barMinHeight: CGFloat = 4
+        /// Цветная точка категории в списке.
+        static let categoryDot: CGFloat = 10
+        /// Высота полоски прогресса категории.
+        static let progressHeight: CGFloat = 4
+        /// Ширина колонки суммы (выравнивание вправо).
+        static let amountColumnWidth: CGFloat = 92
+        /// Отступ разделителя строк слева (под текст, после точки).
+        static let separatorInset: CGFloat = 36
     }
 
     /// Жест «потянуть вниз» → поиск на Главной (§4.1.4).
@@ -90,6 +111,12 @@ enum Theme {
         static let heroAmount = SwiftUI.Font.system(size: 34, weight: .bold).monospacedDigit()
         static let amountInput = SwiftUI.Font.system(size: 60, weight: .bold).monospacedDigit()
         static let sheetTitle = SwiftUI.Font.system(size: 17, weight: .semibold)
+        /// Бренд-бук: Headline 17 semibold.
+        static let headline = SwiftUI.Font.system(size: 17, weight: .semibold)
+        /// Бренд-бук: Body 17.
+        static let body = SwiftUI.Font.system(size: 17)
+        /// Сумма в строке списка (Body semibold, табличные цифры).
+        static let bodyAmount = SwiftUI.Font.system(size: 17, weight: .semibold).monospacedDigit()
         static let sectionTitle = SwiftUI.Font.system(size: 15, weight: .semibold)
         static let rowTitle = SwiftUI.Font.system(size: 16, weight: .medium)
         static let rowAmount = SwiftUI.Font.system(size: 16, weight: .semibold)

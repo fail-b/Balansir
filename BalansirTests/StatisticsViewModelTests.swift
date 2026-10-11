@@ -6,91 +6,86 @@ import Foundation
 @MainActor
 struct StatisticsViewModelTests {
 
-    @Test func суммарный_доход_за_период() async {
-        let entryRepo = MockEntryRepository()
-        entryRepo.entries = [
-            .makeTest(type: .income, amount: 1000, daysAgo: 5),
-            .makeTest(type: .income, amount: 500, daysAgo: 10),
-            .makeTest(type: .expense, amount: 200, daysAgo: 5)
-        ]
-
-        let vm = StatisticsViewModel(entryRepo: entryRepo)
+    private func makeVM(_ entries: [EntryModel]) async -> StatisticsViewModel {
+        let repo = MockEntryRepository()
+        repo.entries = entries
+        let today = StatsFixture.today
+        let vm = StatisticsViewModel(entryRepo: repo, calendar: StatsFixture.calendar, now: { today })
         await vm.load()
-        vm.selectedPeriod = .month
-
-        #expect(vm.totalIncome == 1500)
+        return vm
     }
 
-    @Test func суммарный_расход_за_период() async {
-        let entryRepo = MockEntryRepository()
-        entryRepo.entries = [
-            .makeTest(type: .expense, amount: 300, daysAgo: 5),
-            .makeTest(type: .expense, amount: 700, daysAgo: 15),
-            .makeTest(type: .income, amount: 1000, daysAgo: 5)
-        ]
-
-        let vm = StatisticsViewModel(entryRepo: entryRepo)
-        await vm.load()
-        vm.selectedPeriod = .month
-
-        #expect(vm.totalExpense == 1000)
+    @Test func заголовок_с_названием_месяца() async {
+        let vm = await makeVM([])
+        #expect(vm.monthTitle == "Расходы за октябрь")
     }
 
-    @Test func фильтр_периода_исключает_старые_записи() async {
-        let entryRepo = MockEntryRepository()
-        entryRepo.entries = [
-            .makeTest(type: .expense, amount: 100, daysAgo: 10),   // в периоде
-            .makeTest(type: .expense, amount: 200, daysAgo: 40)    // вне периода
-        ]
-
-        let vm = StatisticsViewModel(entryRepo: entryRepo)
-        await vm.load()
-        vm.selectedPeriod = .month
-
-        #expect(vm.totalExpense == 100)
+    @Test func сумма_и_среднее_за_месяц() async {
+        let vm = await makeVM([
+            StatsFixture.entry(.expense, 800, on: StatsFixture.date(10, 2)),
+            StatsFixture.entry(.expense, 800, on: StatsFixture.date(10, 8)),
+            StatsFixture.entry(.income, 5000, on: StatsFixture.date(10, 2)),
+            StatsFixture.entry(.expense, 9999, on: StatsFixture.date(9, 20)),
+        ])
+        #expect(vm.monthExpense == 1600)
+        #expect(vm.dailyAverage == 200)
     }
 
-    @Test func расходы_по_категориям_группируются_и_сортируются_по_убыванию() async {
-        let cat1 = CategoryModel.makeTest(name: "Еда")
-        let cat2 = CategoryModel.makeTest(name: "Транспорт")
-        let entryRepo = MockEntryRepository()
-        entryRepo.entries = [
-            .makeTest(type: .expense, amount: 100, daysAgo: 5, category: cat1),
-            .makeTest(type: .expense, amount: 200, daysAgo: 5, category: cat1),
-            .makeTest(type: .expense, amount: 500, daysAgo: 5, category: cat2)
-        ]
-
-        let vm = StatisticsViewModel(entryRepo: entryRepo)
-        await vm.load()
-        vm.selectedPeriod = .month
-
-        let result = vm.categoryExpenses
-        #expect(result.count == 2)
-        #expect(result[0].total == 500)  // cat2 первый (больше)
-        #expect(result[1].total == 300)  // cat1 второй (100+200)
+    @Test func столбики_прошедшие_сегодня_будущие() async {
+        let vm = await makeVM([
+            StatsFixture.entry(.expense, 400, on: StatsFixture.date(10, 3)),
+            StatsFixture.entry(.expense, 100, on: StatsFixture.date(10, 8)),
+        ])
+        let bars = vm.dayBars
+        #expect(bars.count == 31)
+        #expect(bars[0].kind == .past)
+        #expect(bars[7].kind == .today)
+        #expect(bars[8].kind == .future)
+        // Высота — относительно самого большого дня.
+        #expect(bars[2].fraction == 1)
+        #expect(bars[7].fraction == 0.25)
+        #expect(bars[0].fraction == 0)
+        #expect(bars[20].fraction == 0)
     }
 
-    @Test func доходные_операции_не_попадают_в_расходы_по_категориям() async {
-        let cat = CategoryModel.makeTest(name: "Зарплата", type: .income)
-        let entryRepo = MockEntryRepository()
-        entryRepo.entries = [
-            .makeTest(type: .income, amount: 5000, daysAgo: 5, category: cat)
-        ]
-
-        let vm = StatisticsViewModel(entryRepo: entryRepo)
-        await vm.load()
-        vm.selectedPeriod = .month
-
-        #expect(vm.categoryExpenses.isEmpty)
+    @Test func подписи_оси_1_8_15_22_и_последний_день() async {
+        let vm = await makeVM([])
+        let labels = vm.dayBars.compactMap(\.axisLabel)
+        #expect(labels == ["1", "8", "15", "22", "31"])
     }
 
-    @Test func ошибка_репозитория_устанавливает_errorMessage() async {
-        let entryRepo = MockEntryRepository()
-        entryRepo.shouldThrow = true
+    @Test func пустой_месяц_даёт_ноль_и_нет_категорий() async {
+        let vm = await makeVM([])
+        #expect(vm.monthExpense == 0)
+        #expect(vm.dailyAverage == 0)
+        #expect(vm.dayBars.count == 31)
+        #expect(vm.dayBars.allSatisfy { $0.fraction == 0 })
+        #expect(vm.categoryStats.isEmpty)
+    }
 
-        let vm = StatisticsViewModel(entryRepo: entryRepo)
+    @Test func категории_проценты_и_прогресс_от_самой_большой() async {
+        let food = CategoryModel.makeTest(name: "Еда")
+        let transport = CategoryModel.makeTest(name: "Транспорт")
+        let vm = await makeVM([
+            StatsFixture.entry(.expense, 600, on: StatsFixture.date(10, 2), category: food),
+            StatsFixture.entry(.expense, 300, on: StatsFixture.date(10, 3), category: transport),
+            StatsFixture.entry(.expense, 100, on: StatsFixture.date(10, 4)),
+        ])
+        let stats = vm.categoryStats
+        #expect(stats.map(\.name) == ["Еда", "Транспорт", "Без категории"])
+        #expect(stats.map(\.percent) == [60, 30, 10])
+        #expect(stats[0].fraction == 1)
+        #expect(stats[1].fraction == 0.5)
+        #expect(abs(stats[2].fraction - 1.0 / 6.0) < 1e-9)
+        #expect(stats[2].colorHex == nil)
+    }
+
+    @Test func ошибка_загрузки_попадает_в_errorMessage() async {
+        let repo = MockEntryRepository()
+        repo.shouldThrow = true
+        let today = StatsFixture.today
+        let vm = StatisticsViewModel(entryRepo: repo, calendar: StatsFixture.calendar, now: { today })
         await vm.load()
-
         #expect(vm.errorMessage != nil)
     }
 }

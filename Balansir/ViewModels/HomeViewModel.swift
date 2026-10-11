@@ -78,12 +78,9 @@ final class HomeViewModel {
         accounts.reduce(Decimal(0)) { $0 + (balances[$1.id] ?? 0) }
     }
 
+    /// Среднее в день за текущий месяц (сегодняшний день входит в число дней).
     var monthDailyAverage: Decimal {
-        let cal = Calendar.current
-        let today = Date()
-        let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: today))!
-        let days = Decimal(max(1, cal.dateComponents([.day], from: monthStart, to: today).day ?? 1))
-        return monthExpense / days
+        StatisticsService.dailyAverage(total: monthExpense, today: Date(), calendar: .current)
     }
 
     /// Лента с учётом фильтра по счёту (карусель) И поискового запроса.
@@ -154,30 +151,16 @@ final class HomeViewModel {
 
     var heroSegments: [CategorySegment] {
         guard monthExpense > 0 else { return [] }
-        let cal = Calendar.current
-        let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: Date()))!
-
-        let monthExpenseEntries = allEntries.filter {
-            $0.type == .expense && $0.date >= monthStart
-        }
-
-        var catTotals: [String: (name: String, colorHex: String, total: Decimal)] = [:]
-        for entry in monthExpenseEntries {
-            let key = entry.category?.id.uuidString ?? "uncategorized"
-            var existing = catTotals[key] ?? (
-                name: entry.category?.name ?? "Прочее",
-                colorHex: entry.category?.colorHex ?? "#8E8E93",
-                total: Decimal(0)
+        let month = StatisticsService.monthInterval(containing: Date(), calendar: .current)
+        let totals = StatisticsService.expensesByCategory(in: allEntries, interval: month)
+        return totals.prefix(4).map { item in
+            let fraction = NSDecimalNumber(decimal: item.total / monthExpense).doubleValue
+            return CategorySegment(
+                name: item.category?.name ?? "Прочее",
+                colorHex: item.category?.colorHex ?? "#8E8E93",
+                fraction: fraction,
+                percent: Int((fraction * 100).rounded())
             )
-            existing.total += entry.amount
-            catTotals[key] = existing
-        }
-
-        let sorted = catTotals.values.sorted { $0.total > $1.total }
-        return Array(sorted.prefix(4)).map { cat in
-            let fraction = NSDecimalNumber(decimal: cat.total / monthExpense).doubleValue
-            let percent = Int((fraction * 100).rounded())
-            return CategorySegment(name: cat.name, colorHex: cat.colorHex, fraction: fraction, percent: percent)
         }
     }
 
@@ -202,16 +185,12 @@ final class HomeViewModel {
 
             let cal = Calendar.current
             let todayStart = cal.startOfDay(for: Date())
-            let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: Date()))!
+            let month = StatisticsService.monthInterval(containing: Date(), calendar: cal)
             todayExpense = entries
                 .filter { $0.type == .expense && $0.date >= todayStart }
                 .reduce(0) { $0 + $1.amount }
-            monthExpense = entries
-                .filter { $0.type == .expense && $0.date >= monthStart }
-                .reduce(0) { $0 + $1.amount }
-            monthIncome = entries
-                .filter { $0.type == .income && $0.date >= monthStart }
-                .reduce(0) { $0 + $1.amount }
+            monthExpense = StatisticsService.total(of: .expense, in: entries, interval: month)
+            monthIncome = StatisticsService.total(of: .income, in: entries, interval: month)
         } catch { errorMessage = error.localizedDescription }
     }
 

@@ -7,30 +7,18 @@ struct StatisticsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: Theme.Spacing.xl) {
-                    Picker("Период", selection: $viewModel.selectedPeriod) {
-                        ForEach(StatsPeriod.allCases, id: \.self) { p in
-                            Text(p.rawValue).tag(p)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
+                VStack(alignment: .leading, spacing: Theme.Spacing.xxl) {
+                    monthCard
 
-                    summaryCards
-
-                    if !viewModel.categoryExpenses.isEmpty {
-                        expenseBreakdown
-                    } else {
-                        ContentUnavailableView(
-                            "Нет расходов",
-                            systemImage: "chart.pie",
-                            description: Text("Добавьте расходы за выбранный период")
-                        )
-                        .padding(.top, 40)
+                    if !viewModel.categoryStats.isEmpty {
+                        categoriesSection
                     }
                 }
+                .padding(.horizontal, Theme.Spacing.l)
+                .padding(.top, Theme.Spacing.s)
                 .padding(.bottom, Theme.Spacing.xxl)
             }
+            .background(Theme.Colors.background)
             .clearsBottomAccessory()
             .reportsScroll(to: $isScrolled)
             .navigationTitle("Статистика")
@@ -46,32 +34,51 @@ struct StatisticsView: View {
         }
     }
 
-    private var summaryCards: some View {
-        HStack(spacing: Theme.Spacing.m) {
-            SummaryCard(title: "Доходы", amount: viewModel.totalIncome, color: Theme.Colors.income, icon: "arrow.up.circle.fill")
-            SummaryCard(title: "Расходы", amount: viewModel.totalExpense, color: Theme.Colors.expense, icon: "arrow.down.circle.fill")
+    // MARK: - Карточка месяца
+
+    private var monthCard: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                Text(viewModel.monthTitle)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.ink2)
+                Text(MoneyFormatter.format(viewModel.monthExpense))
+                    .font(Theme.Font.heroAmount)
+                    .tracking(Theme.Font.Tracking.heroAmount)
+                    .foregroundStyle(Theme.Colors.ink)
+                Text("В среднем \(MoneyFormatter.format(viewModel.dailyAverage)) в день")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.ink2)
+            }
+
+            DailyExpenseChart(bars: viewModel.dayBars)
         }
-        .padding(.horizontal)
+        .padding(Theme.Spacing.xl)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Colors.card, in: RoundedRectangle(cornerRadius: Theme.Radius.hero))
     }
 
-    private var expenseBreakdown: some View {
+    // MARK: - По категориям
+
+    private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.m) {
-            Text("Расходы по категориям").font(.headline).padding(.horizontal)
-            if viewModel.totalExpense > 0 {
-                DonutChart(items: viewModel.categoryExpenses, total: viewModel.totalExpense)
-                    .frame(height: 200)
-                    .padding(.horizontal)
-            }
-            LazyVStack(spacing: 0) {
-                ForEach(viewModel.categoryExpenses, id: \.category.id) { item in
-                    CategoryStatRow(category: item.category, amount: item.total, total: viewModel.totalExpense)
-                    if item.category.id != viewModel.categoryExpenses.last?.category.id {
-                        Divider().padding(.leading, 52)
+            Text("По категориям")
+                .font(Theme.Font.headline)
+                .foregroundStyle(Theme.Colors.ink)
+                .padding(.leading, Theme.Spacing.xs)
+
+            VStack(spacing: 0) {
+                ForEach(viewModel.categoryStats) { stat in
+                    CategoryStatRow(stat: stat)
+                    if stat.id != viewModel.categoryStats.last?.id {
+                        Rectangle()
+                            .fill(Theme.Colors.separator)
+                            .frame(height: Theme.Size.hairline)
+                            .padding(.leading, Theme.Stats.separatorInset)
                     }
                 }
             }
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Theme.Radius.l))
-            .padding(.horizontal)
+            .background(Theme.Colors.card, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         }
     }
 }

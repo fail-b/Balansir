@@ -1,46 +1,54 @@
 import SwiftUI
 
+/// Строка «По категориям» (§4.4): точка · название · % · сумма, под ней прогресс
+/// относительно самой большой категории.
 struct CategoryStatRow: View {
-    let category: CategoryModel
-    let amount: Decimal
-    let total: Decimal
+    let stat: CategoryStat
 
-    private var color: Color { Color(hex: category.colorHex) ?? Theme.Colors.fallback }
-    private var percentage: Double {
-        total > 0 ? NSDecimalNumber(decimal: amount / total).doubleValue : 0
+    private var color: Color {
+        stat.colorHex.flatMap { Color(hex: $0) } ?? Theme.Colors.fallback
     }
 
     var body: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: Theme.Spacing.m) {
-                ZStack {
-                    Circle()
-                        .fill(color.opacity(0.15))
-                        .frame(width: 36, height: 36)
-                    AppIcon.image(named: category.iconName)
-                        .font(.system(size: 15))
-                        .foregroundStyle(color)
+        HStack(alignment: .top, spacing: Theme.Spacing.m) {
+            Circle()
+                .fill(color)
+                .frame(width: Theme.Stats.categoryDot, height: Theme.Stats.categoryDot)
+                // Точка по центру первой строки текста.
+                .frame(height: Theme.Spacing.xxl)
+
+            VStack(spacing: Theme.Spacing.s) {
+                HStack(spacing: Theme.Spacing.s) {
+                    Text(stat.name)
+                        .font(Theme.Font.body)
+                        .foregroundStyle(Theme.Colors.ink)
+                        .lineLimit(1)
+                    Spacer(minLength: Theme.Spacing.s)
+                    Text("\(stat.percent)%")
+                        .font(Theme.Font.body.monospacedDigit())
+                        .foregroundStyle(Theme.Colors.ink2)
+                    Text(MoneyFormatter.format(stat.total))
+                        .font(Theme.Font.bodyAmount)
+                        .foregroundStyle(Theme.Colors.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(width: Theme.Stats.amountColumnWidth, alignment: .trailing)
                 }
-                Text(category.name).font(.callout)
-                Spacer()
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text((amount as NSDecimalNumber).doubleValue, format: .currency(code: "RUB"))
-                        .font(.callout).fontWeight(.semibold)
-                    Text("\(Int(percentage * 100))%")
-                        .font(.caption).foregroundStyle(.secondary)
+                .frame(minHeight: Theme.Spacing.xxl)
+
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Theme.Colors.fill)
+                        Capsule()
+                            .fill(color)
+                            .frame(width: geo.size.width * CGFloat(stat.fraction))
+                    }
                 }
+                .frame(height: Theme.Stats.progressHeight)
             }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3).fill(Color(.systemGray5)).frame(height: 4)
-                    RoundedRectangle(cornerRadius: 3).fill(color)
-                        .frame(width: geo.size.width * percentage, height: 4)
-                }
-            }
-            .frame(height: 4)
-            .padding(.leading, 48)
         }
         .padding(.horizontal, Theme.Spacing.l)
-        .padding(.vertical, 10)
+        .padding(.vertical, Theme.Spacing.m)
+        .accessibilityElement(children: .combine)
     }
 }
