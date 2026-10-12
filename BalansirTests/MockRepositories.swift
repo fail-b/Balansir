@@ -46,9 +46,13 @@ final class MockCategoryRepository: CategoryRepository {
     var shouldThrow = false
     var savedCategory: CategoryModel?
 
+    /// Сколько раз вызывали `unarchive` — проверка, что повторная отмена ничего не делает.
+    var unarchiveCallCount = 0
+
+    /// Скрытые категории (как в Core Data) в `fetchAll` не попадают.
     func fetchAll() async throws -> [CategoryModel] {
         if shouldThrow { throw NSError(domain: "test", code: 1) }
-        return categories
+        return categories.filter { !$0.isArchived }
     }
 
     func save(_ category: CategoryModel) async throws {
@@ -58,6 +62,17 @@ final class MockCategoryRepository: CategoryRepository {
 
     func archive(_ id: UUID) async throws {
         if shouldThrow { throw NSError(domain: "test", code: 1) }
+        setArchived(id, true)
+    }
+
+    func unarchive(_ id: UUID) async throws {
+        unarchiveCallCount += 1
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        setArchived(id, false)
+    }
+
+    private func setArchived(_ id: UUID, _ value: Bool) {
+        if let idx = categories.firstIndex(where: { $0.id == id }) { categories[idx].isArchived = value }
     }
 }
 
@@ -121,10 +136,10 @@ extension AccountModel {
 
 @MainActor
 extension CategoryModel {
-    static func makeTest(name: String = "Категория", type: CategoryType = .expense) -> CategoryModel {
+    static func makeTest(name: String = "Категория", type: CategoryType = .expense, sortOrder: Int32 = 0) -> CategoryModel {
         CategoryModel(
             id: UUID(), name: name, categoryType: type, colorHex: "#FF0000",
-            iconName: "cart", sortOrder: 0, isArchived: false, createdAt: Date(), updatedAt: Date()
+            iconName: "cart", sortOrder: sortOrder, isArchived: false, createdAt: Date(), updatedAt: Date()
         )
     }
 }

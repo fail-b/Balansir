@@ -36,6 +36,19 @@ final class CoreDataCategoryRepository: CategoryRepository {
             request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
             if let entity = try self.context.fetch(request).first {
                 entity.isArchived = true
+                entity.updatedAt = Date()
+                try self.context.save()
+            }
+        }
+    }
+
+    func unarchive(_ id: UUID) async throws {
+        try await context.perform {
+            let request = Category.fetchRequest()
+            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            if let entity = try self.context.fetch(request).first {
+                entity.isArchived = false
+                entity.updatedAt = Date()
                 try self.context.save()
             }
         }

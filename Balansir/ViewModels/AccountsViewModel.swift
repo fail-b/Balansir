@@ -1,5 +1,26 @@
 import Foundation
 
+/// Что скрыто последним — для плашки «Отменить» на вкладке «Счета» (§4.5).
+/// Отменить можно только последнее скрытие: новое скрытие заменяет плашку.
+enum HiddenItem: Equatable {
+    case account(AccountModel)
+    case category(CategoryModel)
+
+    var id: UUID {
+        switch self {
+        case .account(let account): return account.id
+        case .category(let category): return category.id
+        }
+    }
+
+    var toastTitle: String {
+        switch self {
+        case .account(let account): return "Счёт «\(account.name)» скрыт"
+        case .category(let category): return "Категория «\(category.name)» скрыта"
+        }
+    }
+}
+
 @Observable
 final class AccountsViewModel: Identifiable {
     let id = UUID()
@@ -8,8 +29,8 @@ final class AccountsViewModel: Identifiable {
     private(set) var balances: [UUID: Decimal] = [:]
     var selectedCategoryType = CategoryType.expense
     var errorMessage: String?
-    /// Последний скрытый счёт — пока видна плашка «Счёт скрыт · Отменить» (§4.5).
-    private(set) var recentlyArchived: AccountModel?
+    /// Последнее скрытое (счёт или категория) — пока видна плашка «… скрыт · Отменить».
+    private(set) var recentlyHidden: HiddenItem?
 
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
@@ -46,15 +67,15 @@ final class AccountsViewModel: Identifiable {
         } catch { errorMessage = error.localizedDescription }
     }
 
-    // MARK: - Скрытие счёта с отменой
+    // MARK: - Скрытие с отменой (счета и категории)
 
-    /// Скрывает счёт. `false` — не удалось (строка со свайпом тогда возвращается на место).
+    /// Скрывает счёт. `false` — не удалось (строка со свайпом возвращается, прежняя плашка остаётся).
     @discardableResult
     func archive(_ account: AccountModel) async -> Bool {
         do {
             try await accountRepo.archive(account.id)
             accounts.removeAll { $0.id == account.id }
-            recentlyArchived = account
+            recentlyHidden = .account(account)
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -62,12 +83,33 @@ final class AccountsViewModel: Identifiable {
         }
     }
 
-    /// «Отменить» на плашке: возвращает последний скрытый счёт.
-    func undoArchive() async {
-        guard let account = recentlyArchived else { return }
-        recentlyArchived = nil
+    /// Скрывает категорию. Операции с ней остаются (в ленте и статистике она видна по-прежнему).
+    @discardableResult
+    func archive(_ category: CategoryModel) async -> Bool {
         do {
-            try await accountRepo.unarchive(account.id)
+            try await categoryRepo.archive(category.id)
+            categories.removeAll { $0.id == category.id }
+            recentlyHidden = .category(category)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// «Отменить» на плашке: возвращает последнее скрытое. Повторный вызов ничего не делает.
+    func undoArchive() async {
+        guard let item = recentlyHidden else { return }
+        recentlyHidden = nil
+        do {
+            switch item {
+            case .account(let account):
+                try await accountRepo.unarchive(account.id)
+            case .category(let category):
+                try await categoryRepo.unarchive(category.id)
+                // Вернувшаяся категория должна быть видна — переключаем сегмент на её тип.
+                selectedCategoryType = category.categoryType
+            }
         } catch {
             errorMessage = error.localizedDescription
             return
@@ -77,14 +119,7 @@ final class AccountsViewModel: Identifiable {
 
     /// Плашка отмены скрыта (истекло время или начато другое действие).
     func dismissUndo() {
-        recentlyArchived = nil
-    }
-
-    func archive(_ category: CategoryModel) async {
-        do {
-            try await categoryRepo.archive(category.id)
-            categories.removeAll { $0.id == category.id }
-        } catch { errorMessage = error.localizedDescription }
+        recentlyHidden = nil
     }
 
     func makeAccountFormViewModel(for account: AccountModel?) -> AccountFormViewModel {

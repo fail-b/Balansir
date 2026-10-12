@@ -68,7 +68,7 @@ struct AccountsView: View {
             }
             .task { await viewModel.load() }
             .overlay(alignment: .bottom) { undoToast }
-            .animation(.snappy, value: viewModel.recentlyArchived?.id)
+            .animation(.snappy, value: viewModel.recentlyHidden?.id)
             .alert("Ошибка", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
@@ -141,18 +141,18 @@ struct AccountsView: View {
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 
-    /// Плашка «Счёт скрыт · Отменить».
+    /// Плашка «Счёт/Категория … скрыт(а) · Отменить» — одна на экран, для последнего скрытия.
     @ViewBuilder
     private var undoToast: some View {
-        if let archived = viewModel.recentlyArchived {
-            UndoToast(title: "Счёт «\(archived.name)» скрыт") {
+        if let hidden = viewModel.recentlyHidden {
+            UndoToast(title: hidden.toastTitle) {
                 Task { await viewModel.undoArchive() }
             }
             .padding(.horizontal, Theme.Spacing.l)
             .padding(.bottom, Theme.Spacing.s)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             // Новый id — новый отсчёт; уход с экрана отменяет таймер.
-            .task(id: archived.id) {
+            .task(id: hidden.id) {
                 guard (try? await Task.sleep(for: .seconds(Theme.Swipe.undoDuration))) != nil else { return }
                 viewModel.dismissUndo()
             }
@@ -189,34 +189,38 @@ struct AccountsView: View {
             }
 
             addButton("Добавить категорию") {
+                viewModel.dismissUndo()
                 addCategoryVM = viewModel.makeCategoryFormViewModel(for: nil)
                 showingAddCategory = true
             }
         }
     }
 
+    /// Строка категории: тап — изменить, свайп влево — «Скрыть» (с отменой), долгое нажатие — меню.
     private func categoryRow(_ category: CategoryModel) -> some View {
-        Button {
-            editCategoryVM = viewModel.makeCategoryFormViewModel(for: category)
-            showingEditCategory = true
-        } label: {
-            HStack(spacing: Theme.Spacing.m) {
-                CategoryIcon(category: category, size: Theme.Row.iconSize)
-                Text(category.name)
-                    .font(Theme.Font.rowTitle)
-                    .foregroundStyle(Theme.Colors.ink)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, Theme.Spacing.l)
-            .padding(.vertical, Theme.Row.verticalPadding)
-            .background(Theme.Colors.card)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        SwipeToDeleteRow(
+            id: category.id,
+            openRowId: $openSwipeRowId,
+            content: {
+                HStack(spacing: Theme.Spacing.m) {
+                    CategoryIcon(category: category, size: Theme.Row.iconSize)
+                    Text(category.name)
+                        .font(Theme.Font.rowTitle)
+                        .foregroundStyle(Theme.Colors.ink)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, Theme.Spacing.l)
+                .padding(.vertical, Theme.Row.verticalPadding)
+            },
+            onTap: { editCategory(category) },
+            onDelete: { await viewModel.archive(category) },
+            actionTitle: "Скрыть",
+            actionIcon: AppIcon.archive
+        )
         .contextMenu {
             Button {
-                editCategoryVM = viewModel.makeCategoryFormViewModel(for: category)
-                showingEditCategory = true
+                editCategory(category)
             } label: {
                 Label { Text("Изменить") } icon: { AppIcon.image(named: AppIcon.edit) }
             }
@@ -226,6 +230,12 @@ struct AccountsView: View {
                 Label { Text("Скрыть") } icon: { AppIcon.image(named: AppIcon.archive) }
             }
         }
+    }
+
+    private func editCategory(_ category: CategoryModel) {
+        viewModel.dismissUndo()
+        editCategoryVM = viewModel.makeCategoryFormViewModel(for: category)
+        showingEditCategory = true
     }
 
     // MARK: - Общие элементы
