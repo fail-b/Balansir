@@ -86,9 +86,12 @@ final class AddEntryViewModel: Identifiable {
             async let accs = accountRepo.fetchAll()
             async let cats = categoryRepo.fetchAll()
             async let ents = entryRepo.fetchAll()
-            let (fetchedAccounts, fetchedCategories, fetchedEntries) = try await (accs, cats, ents)
+            async let tgs = tagRepo.fetchAll()
+            let (fetchedAccounts, fetchedCategories, fetchedEntries, fetchedTags) = try await (accs, cats, ents, tgs)
             accounts = fetchedAccounts
             categories = fetchedCategories
+            entries = fetchedEntries
+            allTags = fetchedTags
             // Операцию со скрытым счётом/категорией тоже можно отредактировать: подставляем их
             // в списки выбора (только для этой операции), иначе выбор пустой и «Сохранить» неактивна.
             if let entry = editingEntry {
@@ -119,6 +122,10 @@ final class AddEntryViewModel: Identifiable {
                         selectedToAccount = entry.toAccount.flatMap { a in accounts.first { $0.id == a.id } }
                     }
                     selectedCategory = entry.category.flatMap { c in categories.first { $0.id == c.id } }
+                    for tag in entry.tags where !allTags.contains(where: { $0.id == tag.id }) {
+                        allTags.append(tag)
+                    }
+                    selectedTags = entry.tags.compactMap { t in allTags.first { $0.id == t.id } }
                 } else {
                     selectedAccount = accounts.first
                     onTypeChanged()
@@ -133,6 +140,9 @@ final class AddEntryViewModel: Identifiable {
     func onTypeChanged() {
         if selectedType == .transfer {
             selectedCategory = nil
+            // У перевода тегов нет.
+            selectedTags = []
+            cancelAddingTag()
             if selectedToAccount == nil || selectedToAccount?.id == selectedAccount?.id {
                 selectedToAccount = accounts.first { $0.id != selectedAccount?.id }
             }
@@ -141,6 +151,122 @@ final class AddEntryViewModel: Identifiable {
                 selectedCategory = filteredCategories.first
             }
         }
+    }
+
+    // MARK: - Теги (§4.7)
+
+    /// Все теги из хранилища, включая скрытые: по ним новый тег с тем же именем возвращает скрытый.
+    private(set) var allTags: [TagModel] = []
+    /// Операции — для порядка карусели тегов по частоте.
+    private var entries: [EntryModel] = []
+    /// Теги операции. В шите ставится один; два — только у импортированной операции при редактировании.
+    private(set) var selectedTags: [TagModel] = []
+    /// Ячейка «+» карусели превращена в поле ввода нового тега.
+    private(set) var isAddingTag = false
+    var newTagName = ""
+    /// Тег, который переименовывают (алерт с полем), и новое имя.
+    private(set) var tagBeingRenamed: TagModel?
+    var renameText = ""
+
+    /// Карусель тегов есть у расхода и дохода; у перевода тегов нет.
+    var showsTags: Bool { selectedType != .transfer }
+
+    /// Карусель: видимые теги и выбранные (даже скрытые — чтобы их можно было снять),
+    /// первыми — чаще использованные с выбранной категорией.
+    var carouselTags: [TagModel] {
+        let visible = allTags.filter { !$0.isArchived || isSelected($0) }
+        return TagUsageService.ordered(visible, entries: entries, category: selectedCategory)
+    }
+
+    func isSelected(_ tag: TagModel) -> Bool {
+        selectedTags.contains { $0.id == tag.id }
+    }
+
+    /// Тап по тегу: выбранный — снять, иначе выбрать вместо текущих (у операции из шита один тег).
+    func toggleTag(_ tag: TagModel) {
+        if isSelected(tag) {
+            selectedTags.removeAll { $0.id == tag.id }
+        } else {
+            selectedTags = [tag]
+        }
+    }
+
+    /// Тап по «+» в карусели.
+    func startAddingTag() {
+        newTagName = ""
+        isAddingTag = true
+    }
+
+    func cancelAddingTag() {
+        isAddingTag = false
+        newTagName = ""
+    }
+
+    /// «Готово» в поле нового тега: тег создаётся и выбирается. Если тег с таким именем уже есть
+    /// (без учёта регистра), выбирается он, а скрытый возвращается — дубль не создаётся.
+    /// Пустое имя просто закрывает поле.
+    func commitNewTag() async {
+        let name = TagUsageService.cleanName(newTagName)
+        cancelAddingTag()
+        guard !name.isEmpty else { return }
+        if var existing = allTags.first(where: { TagUsageService.sameName($0.name, name, locale: locale) }) {
+            if existing.isArchived {
+                existing.isArchived = false
+                existing.updatedAt = Date()
+                do { try await tagRepo.save(existing) } catch { errorMessage = error.localizedDescription; return }
+                replaceLocal(existing)
+            }
+            selectedTags = [existing]
+            return
+        }
+        let now = Date()
+        let tag = TagModel(id: UUID(), name: name, isArchived: false, createdAt: now, updatedAt: now)
+        do { try await tagRepo.save(tag) } catch { errorMessage = error.localizedDescription; return }
+        allTags.append(tag)
+        selectedTags = [tag]
+    }
+
+    /// «Переименовать» в меню тега (долгий тап).
+    func beginRename(_ tag: TagModel) {
+        tagBeingRenamed = tag
+        renameText = tag.name
+    }
+
+    func cancelRename() {
+        tagBeingRenamed = nil
+        renameText = ""
+    }
+
+    /// Новое имя меняется у самого тега — значит, и на всех операциях с ним.
+    /// Имя, занятое другим тегом (в т.ч. скрытым), — ошибка.
+    func commitRename() async {
+        guard var tag = tagBeingRenamed else { return }
+        let name = TagUsageService.cleanName(renameText)
+        cancelRename()
+        guard !name.isEmpty, name != tag.name else { return }
+        if allTags.contains(where: { $0.id != tag.id && TagUsageService.sameName($0.name, name, locale: locale) }) {
+            errorMessage = String(localized: "A tag with this name already exists.")
+            return
+        }
+        tag.name = name
+        tag.updatedAt = Date()
+        do { try await tagRepo.save(tag) } catch { errorMessage = error.localizedDescription; return }
+        replaceLocal(tag)
+    }
+
+    /// «Скрыть» в меню тега: тег пропадает из карусели и снимается с этой операции;
+    /// на сохранённых операциях остаётся.
+    func hideTag(_ tag: TagModel) async {
+        do { try await tagRepo.archive(tag.id) } catch { errorMessage = error.localizedDescription; return }
+        selectedTags.removeAll { $0.id == tag.id }
+        var hidden = tag
+        hidden.isArchived = true
+        replaceLocal(hidden)
+    }
+
+    private func replaceLocal(_ tag: TagModel) {
+        if let i = allTags.firstIndex(where: { $0.id == tag.id }) { allTags[i] = tag } else { allTags.append(tag) }
+        if let i = selectedTags.firstIndex(where: { $0.id == tag.id }) { selectedTags[i] = tag }
     }
 
     // MARK: - Ввод суммы (правила §4.7 — в AmountInput)
@@ -165,7 +291,7 @@ final class AddEntryViewModel: Identifiable {
             amount: amount,
             currency: currency,
             note: note.isEmpty ? nil : note,
-            tags: editingEntry?.tags ?? [],
+            tags: selectedType == .transfer ? [] : selectedTags,
             isRecurring: editingEntry?.isRecurring ?? false,
             isSoftDeleted: false,
             createdAt: editingEntry?.createdAt ?? now,
