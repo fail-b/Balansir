@@ -136,6 +136,8 @@ enum Theme {
         static let searchMorph: SwiftUI.Animation = .spring(response: 0.35, dampingFraction: 0.8)
         /// Смена своей цифровой клавиатуры на системную в шите операции (§4.7).
         static let numpadToggle: SwiftUI.Animation = .easeInOut(duration: 0.25)
+        /// Пауза перед прокруткой карусели к счёту после перехода со вкладки «Счета» (§4.5).
+        static let revealDelay: Duration = .milliseconds(200)
     }
 
     enum Spacing {

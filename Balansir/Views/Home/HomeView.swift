@@ -350,7 +350,10 @@ struct HomeView: View {
             // (новый счёт появляется после load()), затем — лента в начало, чип в центр.
             .task(id: pendingReveal) {
                 guard let id = pendingReveal else { return }
-                await Task.yield()   // дать карусели разложиться после смены вкладки
+                // Ждём, пока Главная после смены вкладки встанет на экран:
+                // scrollTo в момент переключения теряется, и чип остаётся за краем.
+                try? await Task.sleep(for: Theme.Animation.revealDelay)
+                guard !Task.isCancelled else { return }
                 scrollPosition.scrollTo(edge: .top)
                 withAnimation(.snappy) { proxy.scrollTo(id, anchor: .center) }
                 viewModel.didRevealAccount()
