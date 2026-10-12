@@ -68,6 +68,8 @@ struct CategoryFormView: View {
                             }
                         }
                 }
+                // Долг №8: без .plain в строке Form срабатывает последняя кнопка ряда.
+                .buttonStyle(.plain)
             }
         }
         .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
@@ -88,6 +90,7 @@ struct CategoryFormView: View {
                             .foregroundStyle(viewModel.selectedIcon == icon ? .white : .primary)
                     }
                 }
+                .buttonStyle(.plain)
             }
         }
         .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
