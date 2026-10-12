@@ -237,12 +237,20 @@ final class AddEntryViewModel: Identifiable {
         renameText = ""
     }
 
+    /// «Сохранить» в алерте: переименовать тег, который сейчас редактируется.
+    func commitRename() async {
+        guard let tag = tagBeingRenamed else { return }
+        let name = renameText
+        cancelRename()
+        await rename(tag, to: name)
+    }
+
     /// Новое имя меняется у самого тега — значит, и на всех операциях с ним.
     /// Имя, занятое другим тегом (в т.ч. скрытым), — ошибка.
-    func commitRename() async {
-        guard var tag = tagBeingRenamed else { return }
-        let name = TagUsageService.cleanName(renameText)
+    func rename(_ tag: TagModel, to newName: String) async {
         cancelRename()
+        var tag = tag
+        let name = TagUsageService.cleanName(newName)
         guard !name.isEmpty, name != tag.name else { return }
         if allTags.contains(where: { $0.id != tag.id && TagUsageService.sameName($0.name, name, locale: locale) }) {
             errorMessage = String(localized: "A tag with this name already exists.")
@@ -279,6 +287,11 @@ final class AddEntryViewModel: Identifiable {
     var formattedAmount: String { amountInput.formatted(locale: locale) }
 
     func save() async {
+        // Новый тег введён, но «Готово» не нажата — сохраняем и ставим его (минимум тапов).
+        if isAddingTag {
+            await commitNewTag()
+            if errorMessage != nil { return }
+        }
         let now = Date()
         guard !isInFuture(date, now: now) else {
             errorMessage = String(localized: "The transaction date can’t be later than today.")

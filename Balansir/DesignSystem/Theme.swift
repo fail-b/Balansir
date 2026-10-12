@@ -8,7 +8,7 @@ enum Theme {
         static let card = Color("Colors/card")
         static let ink = Color("Colors/ink")
         static let ink2 = Color("Colors/ink2")
-        /// Третичный текст: заметка «#…» в строке операции (§4.2). Светлее `ink2`.
+        /// Третичный текст, светлее `ink2`.
         static let ink3 = Color("Colors/ink3")
         static let separator = Color("Colors/separator")
         static let fill = Color("Colors/fill")
@@ -70,6 +70,27 @@ enum Theme {
         static let separatorInset: CGFloat = 68
     }
 
+    /// Шит новой операции (§4.7).
+    enum AddEntry {
+        /// Ячейка быстрого выбора категории: ширина, рамка под кольцо выбора, иконка, кольцо, зазор до подписи.
+        static let categoryCellWidth: CGFloat = 68
+        static let categoryRingFrame: CGFloat = 52
+        static let categoryIconSize: CGFloat = 46
+        static let categoryRingWidth: CGFloat = 2
+        static let categoryLabelGap: CGFloat = 6
+    }
+    /// Теги (§4.2, §4.7): карусель в шите и чипы в строке ленты.
+    enum TagChip {
+        /// Ячейка карусели в шите.
+        static let carouselHeight: CGFloat = 32
+        static let carouselHorizontalPadding: CGFloat = 12
+        /// Поле нового тега на месте «+»: ширина и обводка.
+        static let newTagFieldWidth: CGFloat = 140
+        static let newTagFieldBorder: CGFloat = 1.5
+        /// Чип в строке ленты.
+        static let rowHorizontalPadding: CGFloat = 6
+        static let rowVerticalPadding: CGFloat = 2
+    }
     /// Свайп влево по строке операции → удаление (§4.2).
     enum Swipe {
         /// Ширина открытой кнопки «Удалить».
@@ -254,8 +275,15 @@ enum Theme {
         static let sectionTitle = SwiftUI.Font.system(size: 15, weight: .semibold)
         static let rowTitle = SwiftUI.Font.system(size: 16, weight: .medium)
         static let rowAmount = SwiftUI.Font.system(size: 16, weight: .semibold)
-        /// Заметка «#…» в строке операции — в одной строке с названием, но не жирная.
-        static let rowNote = SwiftUI.Font.system(size: 16)
+        /// Заметка в строке операции — во второй строке после счёта, курсивом в кавычках “…” (§4.2).
+        static let rowNote = SwiftUI.Font.system(size: 13).italic()
+        /// Чип тега `#Тег` в строке операции (§4.2).
+        static let tagChip = SwiftUI.Font.system(size: 13, weight: .medium)
+        /// Ячейка карусели тегов в шите (§4.7).
+        static let tagCarousel = SwiftUI.Font.system(size: 15, weight: .medium)
+        /// Подпись ячейки быстрого выбора категории в шите: обычная и выбранная.
+        static let categoryCellLabel = SwiftUI.Font.system(size: 11)
+        static let categoryCellLabelSelected = SwiftUI.Font.system(size: 11, weight: .semibold)
         static let caption = SwiftUI.Font.system(size: 13)
         static let time = SwiftUI.Font.system(size: 12)
         /// Иконка перевода в строке операции и корзина в свайпе.

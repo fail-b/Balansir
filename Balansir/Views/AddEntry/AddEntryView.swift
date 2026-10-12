@@ -6,9 +6,11 @@ struct AddEntryView: View {
 
     @State private var path: [AccountPickerTarget] = []
     @State private var showDatePicker = false
-    /// Фокус поля «Заметка». Пока он есть — вместо своей цифровой клавиатуры системная,
+    /// Поле с системной клавиатурой: «Заметка» или новый тег в карусели.
+    private enum Field { case note, newTag }
+    /// Пока фокус в поле — вместо своей цифровой клавиатуры системная,
     /// а «Сохранить» остаётся над ней (правило «минимум тапов»).
-    @FocusState private var isNoteFocused: Bool
+    @FocusState private var focusedField: Field?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -31,6 +33,19 @@ struct AddEntryView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .alert("Rename tag", isPresented: Binding(
+            get: { viewModel.tagBeingRenamed != nil },
+            set: { if !$0 { viewModel.cancelRename() } }
+        )) {
+            TextField("Tag name", text: $viewModel.renameText)
+            Button("Cancel", role: .cancel) { viewModel.cancelRename() }
+            Button("Save") {
+                // Тег и имя берём сейчас: после закрытия алерта состояние переименования сбрасывается.
+                guard let tag = viewModel.tagBeingRenamed else { return }
+                let name = viewModel.renameText
+                Task { await viewModel.rename(tag, to: name) }
+            }
         }
     }
 
@@ -55,20 +70,20 @@ struct AddEntryView: View {
             .scrollIndicators(.hidden)
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
-            if !isNoteFocused {
+            if focusedField == nil {
                 NumpadView(layout: .amount) { viewModel.press($0) }
                 .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
             }
             saveButton
                 .padding(.top, Theme.Spacing.m)
         }
-        .animation(reduceMotion ? nil : Theme.Animation.numpadToggle, value: isNoteFocused)
+        .animation(reduceMotion ? nil : Theme.Animation.numpadToggle, value: focusedField)
         .padding(.horizontal, Theme.Spacing.l)
         .padding(.bottom, Theme.Spacing.s)
-        // Тап в любое место мимо поля «Заметка» прячет системную клавиатуру
+        // Тап в любое место мимо полей прячет системную клавиатуру
         // и возвращает цифровую. Кнопки и само поле обрабатывают свои тапы раньше.
         .contentShape(Rectangle())
-        .onTapGesture { isNoteFocused = false }
+        .onTapGesture { focusedField = nil }
         .background(Theme.Colors.background)
     }
 
@@ -97,7 +112,7 @@ struct AddEntryView: View {
 
     private var dateChip: some View {
         Button {
-            isNoteFocused = false
+            focusedField = nil
             showDatePicker = true
         } label: {
             HStack(spacing: 6) {
@@ -146,7 +161,7 @@ struct AddEntryView: View {
             ForEach(EntryType.allCases, id: \.self) { type in
                 let isActive = viewModel.selectedType == type
                 Button {
-                    isNoteFocused = false
+                    focusedField = nil
                     viewModel.selectedType = type
                     viewModel.onTypeChanged()
                 } label: {
@@ -184,7 +199,7 @@ struct AddEntryView: View {
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(Theme.Colors.ink2)
             caret
-                .opacity(isNoteFocused ? 0 : 1)
+                .opacity(focusedField != nil ? 0 : 1)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -208,6 +223,10 @@ struct AddEntryView: View {
             if viewModel.selectedType != .transfer {
                 categoryStrip
                     .padding(.vertical, Theme.Spacing.m)
+                if viewModel.showsTags {
+                    tagStrip
+                        .padding(.bottom, Theme.Spacing.m)
+                }
                 Divider().padding(.leading, Theme.Spacing.l)
                 accountRow(target: .from, label: "Account")
             } else {
@@ -237,32 +256,120 @@ struct AddEntryView: View {
     private func categoryCell(_ category: CategoryModel) -> some View {
         let isSelected = viewModel.selectedCategory?.id == category.id
         return Button {
-            isNoteFocused = false
+            focusedField = nil
             viewModel.selectedCategory = category
         } label: {
-            VStack(spacing: 6) {
-                // Фрейм 52×52 резервирует место под кольцо, чтобы оно не обрезалось.
+            VStack(spacing: Theme.AddEntry.categoryLabelGap) {
+                // Рамка шире иконки — место под кольцо выбора, чтобы оно не обрезалось.
                 ZStack {
                     if isSelected {
-                        Circle().strokeBorder(Theme.Colors.accent, lineWidth: 2)
+                        Circle().strokeBorder(Theme.Colors.accent, lineWidth: Theme.AddEntry.categoryRingWidth)
                     }
-                    CategoryIcon(category: category, size: 46)
+                    CategoryIcon(category: category, size: Theme.AddEntry.categoryIconSize)
                 }
-                .frame(width: 52, height: 52)
+                .frame(width: Theme.AddEntry.categoryRingFrame, height: Theme.AddEntry.categoryRingFrame)
                 Text(category.name)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    .font(isSelected ? Theme.Font.categoryCellLabelSelected : Theme.Font.categoryCellLabel)
                     .foregroundStyle(isSelected ? Theme.Colors.ink : Theme.Colors.ink2)
                     .lineLimit(1)
             }
-            .frame(width: 68)
+            .frame(width: Theme.AddEntry.categoryCellWidth)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Теги (§4.7)
+
+    /// Карусель всех тегов: первыми — чаще использованные с выбранной категорией. Тап — выбрать/снять,
+    /// долгий тап — меню «Переименовать / Скрыть», последняя ячейка «+» — поле нового тега.
+    private var tagStrip: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.Spacing.s) {
+                    ForEach(viewModel.carouselTags) { tag in
+                        tagCell(tag)
+                    }
+                    addTagCell
+                        .id(Field.newTag)
+                }
+                .padding(.horizontal, Theme.Spacing.l)
+            }
+            .onChange(of: viewModel.isAddingTag) { _, isAdding in
+                if isAdding { withAnimation { proxy.scrollTo(Field.newTag, anchor: .trailing) } }
+            }
+        }
+        // Ушёл фокус из поля нового тега (тап мимо, «Сохранить») — введённое сохраняется.
+        .onChange(of: focusedField) { old, new in
+            if old == .newTag, new != .newTag, viewModel.isAddingTag {
+                Task { await viewModel.commitNewTag() }
+            }
+        }
+    }
+
+    private func tagCell(_ tag: TagModel) -> some View {
+        let isSelected = viewModel.isSelected(tag)
+        return Button {
+            focusedField = nil
+            viewModel.toggleTag(tag)
+        } label: {
+            Text(verbatim: "#\(tag.name)")
+                .font(Theme.Font.tagCarousel)
+                .foregroundStyle(isSelected ? Theme.Colors.onColor : Theme.Colors.ink)
+                .lineLimit(1)
+                .padding(.horizontal, Theme.TagChip.carouselHorizontalPadding)
+                .frame(height: Theme.TagChip.carouselHeight)
+                .background(isSelected ? Theme.Colors.accent : Theme.Colors.fill, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        // Системное контекстное меню: можно не отпускать палец и сразу провести до пункта.
+        .contextMenu {
+            Button {
+                viewModel.beginRename(tag)
+            } label: {
+                Label { Text("Rename") } icon: { AppIcon.image(named: AppIcon.edit) }
+            }
+            Button(role: .destructive) {
+                Task { await viewModel.hideTag(tag) }
+            } label: {
+                Label { Text("Hide") } icon: { AppIcon.image(named: AppIcon.archive) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var addTagCell: some View {
+        if viewModel.isAddingTag {
+            TextField("New tag", text: $viewModel.newTagName)
+                .font(Theme.Font.tagCarousel)
+                .foregroundStyle(Theme.Colors.ink)
+                .focused($focusedField, equals: .newTag)
+                .submitLabel(.done)
+                .onSubmit { Task { await viewModel.commitNewTag() } }
+                .padding(.horizontal, Theme.TagChip.carouselHorizontalPadding)
+                .frame(width: Theme.TagChip.newTagFieldWidth, height: Theme.TagChip.carouselHeight)
+                .background(Theme.Colors.fill, in: Capsule())
+                .overlay(Capsule().strokeBorder(Theme.Colors.accent, lineWidth: Theme.TagChip.newTagFieldBorder))
+                .onAppear { focusedField = .newTag }
+        } else {
+            Button {
+                viewModel.startAddingTag()
+                focusedField = .newTag
+            } label: {
+                AppIcon.image(named: AppIcon.add)
+                    .font(Theme.Font.tagCarousel)
+                    .foregroundStyle(Theme.Colors.ink2)
+                    .frame(width: Theme.TagChip.carouselHeight, height: Theme.TagChip.carouselHeight)
+                    .background(Theme.Colors.fill, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("New tag"))
+        }
     }
 
     private func accountRow(target: AccountPickerTarget, label: LocalizedStringKey) -> some View {
         let account = target == .from ? viewModel.selectedAccount : viewModel.selectedToAccount
         return Button {
-            isNoteFocused = false
+            focusedField = nil
             path.append(target)
         } label: {
             HStack(spacing: Theme.Spacing.m) {
@@ -295,14 +402,14 @@ struct AddEntryView: View {
             TextField("Note", text: $viewModel.note)
                 .font(Theme.Font.rowTitle)
                 .foregroundStyle(Theme.Colors.ink)
-                .focused($isNoteFocused)
+                .focused($focusedField, equals: .note)
                 .submitLabel(.done)
-                .onSubmit { isNoteFocused = false }
+                .onSubmit { focusedField = nil }
         }
         .padding(.horizontal, Theme.Spacing.l)
         .padding(.vertical, Theme.Spacing.m)
         .contentShape(Rectangle())
-        .onTapGesture { isNoteFocused = true }
+        .onTapGesture { focusedField = .note }
     }
 
     // MARK: - Сохранить

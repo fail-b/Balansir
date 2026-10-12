@@ -191,4 +191,14 @@ struct AddEntryTagsTests {
         env.vm.toggleTag(hidden)
         #expect(env.vm.carouselTags.isEmpty)
     }
+
+    @Test func сохранить_с_открытым_полем_ставит_новый_тег() async {
+        let env = await makeEnv()
+        env.vm.amountString = "200"
+        env.vm.startAddingTag()
+        env.vm.newTagName = "Кофе"
+        await env.vm.save()
+        #expect(env.entryRepo.savedEntry?.tags.map(\.name) == ["Кофе"])
+        #expect(env.tagRepo.tags.map(\.name) == ["Кофе"])
+    }
 }
