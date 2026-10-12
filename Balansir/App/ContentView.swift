@@ -44,7 +44,11 @@ struct ContentView: View {
             }
 
             Tab(value: AppTab.accounts) {
-                AccountsView(viewModel: accountsVM, isScrolled: $isScrolled)
+                AccountsView(viewModel: accountsVM, isScrolled: $isScrolled) { accountId in
+                    // Тап по счёту → Главная с фильтром по нему (§4.5).
+                    homeVM.showAccount(accountId)
+                    selectedTab = .home
+                }
             } label: {
                 tabLabel("Счета", icon: AppIcon.tabAccounts)
             }

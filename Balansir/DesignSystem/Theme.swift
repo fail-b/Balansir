@@ -91,6 +91,32 @@ enum Theme {
         static let separatorInset: CGFloat = 36
     }
 
+    /// Экран «Счета» (§4.5) и шит «Новый счёт» (§4.6).
+    enum Accounts {
+        /// Цветная «карточка» счёта в списке.
+        static let colorCardWidth: CGFloat = 34
+        static let colorCardHeight: CGFloat = 23
+        /// Зазор между карточкой и названием.
+        static let textGap: CGFloat = 14
+        /// Отступ разделителя слева: паддинг 16 + карточка 34 + зазор 14.
+        static let separatorInset: CGFloat = 64
+        /// Кружок цвета в шите.
+        static let colorDot: CGFloat = 30
+        /// Кольцо выбранного цвета: толщина и зазор до кружка.
+        static let colorRingWidth: CGFloat = 2
+        static let colorRingGap: CGFloat = 3
+        /// Кнопка «Добавить» в шите.
+        static let addButtonHeight: CGFloat = 54
+        /// Прозрачность неактивной кнопки «Добавить».
+        static let disabledOpacity: Double = 0.45
+        /// Поле «Баланс».
+        static let balanceFieldHeight: CGFloat = 52
+        /// Сегмент «Карта · Наличные · Вклад»: высота активной капсулы и её тень.
+        static let segmentHeight: CGFloat = 36
+        static let segmentShadowRadius: CGFloat = 4
+        static let segmentShadowY: CGFloat = 1
+    }
+
     /// Самописная цифровая клавиатура `NumpadView` (§4.6, §4.7).
     enum Numpad {
         static let keyHeight: CGFloat = 52
@@ -168,6 +194,10 @@ enum Theme {
         /// Подпись версии внизу Настроек (§4.8).
         static let appVersion = SwiftUI.Font.system(size: 12)
         static let searchField = SwiftUI.Font.system(size: 17)
+        /// Заголовок шита «Новый счёт» (§4.6).
+        static let accountSheetTitle = SwiftUI.Font.system(size: 20, weight: .bold)
+        /// Кнопка-действие во всю ширину («Добавить», «+ Добавить счёт»).
+        static let actionButton = SwiftUI.Font.system(size: 17, weight: .semibold)
         /// Клавиши `NumpadView`: цифры/знаки и иконка ⌫.
         static let numpadKey = SwiftUI.Font.system(size: 26, weight: .medium)
         static let numpadIcon = SwiftUI.Font.system(size: 22)
@@ -186,6 +216,12 @@ enum Theme {
     }
 
     enum Palette {
+        /// Цвета счёта в шите «Новый счёт» (§4.6) — 8 кружков.
+        static let accountHexColors: [String] = [
+            "#4CAF50", "#FFDD00", "#EF3124", "#009FDF",
+            "#3F51B5", "#9B59B6", "#FF8C42", "#1C1C1E",
+        ]
+        /// Цвета категорий.
         static let hexColors: [String] = [
             "#4CAF50", "#FFDD00", "#EF3124",
             "#009FDF", "#3F51B5", "#9B59B6",

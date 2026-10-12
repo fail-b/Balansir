@@ -26,6 +26,9 @@ enum AppIcon {
     static let export = "square.and.arrow.up"
     static let importData = "square.and.arrow.down"
     static let trash = "trash"
+    static let edit = "pencil"
+    /// «Скрыть» счёт/категорию (мягкое удаление).
+    static let archive = "archivebox"
 
     // Категории (пикеры)
     static let accountPicker: [String] = [

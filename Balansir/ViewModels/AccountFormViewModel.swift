@@ -1,14 +1,53 @@
 import Foundation
 
-@Observable
-final class AccountFormViewModel {
-    var name = ""
-    var selectedType = AccountType.debit
-    var initialBalanceString = "0"
-    var selectedColorHex = "#4A90D9"
-    var selectedIcon = "creditcard"
+/// Тип счёта в сегменте шита «Новый счёт» (§4.6). `credit` есть в модели, но в форме не показывается.
+enum AccountKind: CaseIterable, Hashable {
+    case card, cash, deposit
 
-    private var editingAccount: AccountModel?
+    init(_ type: AccountType) {
+        switch type {
+        case .debit, .credit: self = .card
+        case .cash: self = .cash
+        case .savings: self = .deposit
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .card: return "Карта"
+        case .cash: return "Наличные"
+        case .deposit: return "Вклад"
+        }
+    }
+
+    var accountType: AccountType {
+        switch self {
+        case .card: return .debit
+        case .cash: return .cash
+        case .deposit: return .savings
+        }
+    }
+
+    var namePlaceholder: String {
+        switch self {
+        case .card: return "Например, Зарплатная карта"
+        case .cash: return "Например, Кошелёк"
+        case .deposit: return "Например, Накопления"
+        }
+    }
+}
+
+@Observable
+final class AccountFormViewModel: Identifiable {
+    let id = UUID()
+    var name = ""
+    var selectedKind = AccountKind.card
+    var selectedColorHex = Theme.Palette.accountHexColors[0]
+    var errorMessage: String?
+    /// Начальный баланс: копейки и минус (кредитка, долг) — ввод своим numpad.
+    private(set) var balanceInput = AmountInput(allowsNegative: true)
+
+    private let editingAccount: AccountModel?
     private let accountRepo: any AccountRepository
 
     init(account: AccountModel? = nil, accountRepo: any AccountRepository) {
@@ -16,32 +55,83 @@ final class AccountFormViewModel {
         self.accountRepo = accountRepo
         if let account {
             name = account.name
-            selectedType = account.accountType
-            initialBalanceString = "\(account.initialBalance)"
+            selectedKind = AccountKind(account.accountType)
             selectedColorHex = account.colorHex
-            selectedIcon = account.iconName
+            balanceInput = AmountInput(decimal: account.initialBalance, allowsNegative: true)
         }
     }
 
     var isEditing: Bool { editingAccount != nil }
-    var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
-    var initialBalance: Decimal { Decimal(string: initialBalanceString) ?? 0 }
-    var errorMessage: String?
+    var title: String { isEditing ? "Изменить счёт" : "Новый счёт" }
+    var actionTitle: String { isEditing ? "Сохранить" : "Добавить" }
+    var namePlaceholder: String { selectedKind.namePlaceholder }
+    var canSave: Bool { !trimmedName.isEmpty }
 
-    func save(existingCount: Int) async {
-        let model = AccountModel(
-            id: editingAccount?.id ?? UUID(),
-            name: name.trimmingCharacters(in: .whitespaces),
-            initialBalance: initialBalance,
-            currency: "RUB",
-            colorHex: selectedColorHex,
-            iconName: selectedIcon,
-            accountType: selectedType,
-            sortOrder: editingAccount?.sortOrder ?? Int32(existingCount),
-            isArchived: false,
-            createdAt: editingAccount?.createdAt ?? Date(),
-            updatedAt: Date()
-        )
-        do { try await accountRepo.save(model) } catch { errorMessage = error.localizedDescription }
+    /// Цвета для выбора. Цвет редактируемого счёта не из палитры — первым в ряду, чтобы он не потерялся.
+    var colorOptions: [String] {
+        let palette = Theme.Palette.accountHexColors
+        let current = selectedColorHex.uppercased()
+        return palette.contains(where: { $0.uppercased() == current }) ? palette : [selectedColorHex] + palette
+    }
+
+    func isSelected(_ hex: String) -> Bool {
+        hex.uppercased() == selectedColorHex.uppercased()
+    }
+
+    // MARK: - Баланс
+
+    var initialBalance: Decimal { balanceInput.value }
+    var formattedBalance: String { balanceInput.formatted }
+    var isBalanceEmpty: Bool { balanceInput.isEmpty }
+
+    func press(_ key: NumpadKey) {
+        balanceInput.apply(key)
+    }
+
+    // MARK: - Сохранение
+
+    /// Тип для сохранения: если сегмент не трогали — исходный тип (кредитка остаётся `credit`).
+    var accountType: AccountType {
+        if let editingAccount, AccountKind(editingAccount.accountType) == selectedKind {
+            return editingAccount.accountType
+        }
+        return selectedKind.accountType
+    }
+
+    /// Иконка: при смене типа — иконка нового типа, иначе прежняя.
+    private var iconName: String {
+        if let editingAccount, editingAccount.accountType == accountType {
+            return editingAccount.iconName
+        }
+        return accountType.defaultIcon
+    }
+
+    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    func save() async {
+        do {
+            let sortOrder: Int32
+            if let editingAccount {
+                sortOrder = editingAccount.sortOrder
+            } else {
+                // Новый счёт — в конец списка: max + 1 (count даёт дубли после скрытия счетов).
+                let all = try await accountRepo.fetchAll()
+                sortOrder = (all.map(\.sortOrder).max() ?? -1) + 1
+            }
+            let model = AccountModel(
+                id: editingAccount?.id ?? UUID(),
+                name: trimmedName,
+                initialBalance: initialBalance,
+                currency: editingAccount?.currency ?? "RUB",
+                colorHex: selectedColorHex,
+                iconName: iconName,
+                accountType: accountType,
+                sortOrder: sortOrder,
+                isArchived: false,
+                createdAt: editingAccount?.createdAt ?? Date(),
+                updatedAt: Date()
+            )
+            try await accountRepo.save(model)
+        } catch { errorMessage = error.localizedDescription }
     }
 }
