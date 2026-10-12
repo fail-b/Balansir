@@ -25,8 +25,8 @@ struct HomeView: View {
     @State private var scrollPhase: ScrollPhase = .idle
     @State private var pendingClose = false
     @State private var scrollPosition = ScrollPosition(edge: .top)
-    /// Позиция карусели счетов — для прокрутки к счёту при переходе со вкладки «Счета».
-    @State private var chipsPosition = ScrollPosition(idType: UUID.self)
+    /// Главная на экране (вкладка выбрана). Пока скрыта — к счёту не прокручиваем: скрытый скролл не двигается.
+    @State private var isVisible = false
     // Высота hero вместе с верхним отступом — последняя измеренная (в поиске hero нет в раскладке).
     @State private var heroHeight: CGFloat = 0
     // Высота шапки (строка поиска с отступами): по ней решаем, видна ли строка при закрытии.
@@ -61,8 +61,8 @@ struct HomeView: View {
         }
         .task { await viewModel.load() }
         // Переход со вкладки «Счета»: лента — в начало, карусель — к выбранному счёту.
-        .onAppear { revealAccountIfNeeded() }
-        .onChange(of: viewModel.accountToReveal) { _, _ in revealAccountIfNeeded() }
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
         .onChange(of: viewModel.isSearchActive) { _, isActive in
             if !isActive { isSearchFocused = false }
         }
@@ -321,38 +321,49 @@ struct HomeView: View {
     // MARK: - Account Filter Chips
 
     private var accountFilterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Theme.Spacing.s) {
-                AccountChip(
-                    title: "Все",
-                    colorHex: nil,
-                    balance: viewModel.totalBalance,
-                    isActive: viewModel.selectedAccountId == nil
-                ) {
-                    viewModel.selectedAccountId = nil
-                }
-                ForEach(viewModel.accounts) { account in
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.Spacing.s) {
                     AccountChip(
-                        title: account.name,
-                        colorHex: account.colorHex,
-                        balance: viewModel.balances[account.id] ?? 0,
-                        isActive: viewModel.selectedAccountId == account.id
+                        title: "Все",
+                        colorHex: nil,
+                        balance: viewModel.totalBalance,
+                        isActive: viewModel.selectedAccountId == nil
                     ) {
-                        viewModel.selectedAccountId = viewModel.selectedAccountId == account.id ? nil : account.id
+                        viewModel.selectedAccountId = nil
+                    }
+                    ForEach(viewModel.accounts) { account in
+                        AccountChip(
+                            title: account.name,
+                            colorHex: account.colorHex,
+                            balance: viewModel.balances[account.id] ?? 0,
+                            isActive: viewModel.selectedAccountId == account.id
+                        ) {
+                            viewModel.selectedAccountId = viewModel.selectedAccountId == account.id ? nil : account.id
+                        }
+                        .id(account.id)
                     }
                 }
+                .padding(.horizontal, Theme.Spacing.l)
             }
-            .padding(.horizontal, Theme.Spacing.l)
-            .scrollTargetLayout()
+            // Переход со вкладки «Счета»: ждём, пока Главная видна и чип счёта уже есть
+            // (новый счёт появляется после load()), затем — лента в начало, чип в центр.
+            .task(id: pendingReveal) {
+                guard let id = pendingReveal else { return }
+                await Task.yield()   // дать карусели разложиться после смены вкладки
+                scrollPosition.scrollTo(edge: .top)
+                withAnimation(.snappy) { proxy.scrollTo(id, anchor: .center) }
+                viewModel.didRevealAccount()
+            }
         }
-        .scrollPosition($chipsPosition, anchor: .center)
     }
 
-    private func revealAccountIfNeeded() {
-        guard let id = viewModel.accountToReveal else { return }
-        scrollPosition.scrollTo(edge: .top)
-        chipsPosition.scrollTo(id: id, anchor: .center)
-        viewModel.didRevealAccount()
+    /// Счёт, к которому пора прокрутить карусель; nil — рано или нечего.
+    private var pendingReveal: UUID? {
+        guard isVisible,
+              let id = viewModel.accountToReveal,
+              viewModel.accounts.contains(where: { $0.id == id }) else { return nil }
+        return id
     }
 
     // MARK: - Empty State
