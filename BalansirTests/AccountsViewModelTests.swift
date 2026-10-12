@@ -163,4 +163,20 @@ struct AccountsViewModelTests {
         await vm.undoArchive()
         #expect(vm.errorMessage != nil)
     }
+
+    @Test func archive_возвращает_результат_для_свайпа() async {
+        let account = AccountModel.makeTest()
+        let repo = MockAccountRepository()
+        repo.accounts = [account]
+        let vm = makeVM(repo)
+        await vm.load()
+        repo.shouldThrow = true
+        let failed = await vm.archive(account)
+        #expect(failed == false)
+        #expect(vm.accounts.count == 1)   // строка остаётся
+        #expect(vm.recentlyArchived == nil)
+        repo.shouldThrow = false
+        let hidden = await vm.archive(account)
+        #expect(hidden == true)
+    }
 }

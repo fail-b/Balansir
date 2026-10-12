@@ -8,6 +8,8 @@ struct AccountsView: View {
     let onSelectAccount: (UUID) -> Void
 
     @State private var accountFormVM: AccountFormViewModel?
+    /// Строка счёта, открытая свайпом; nil — ни одна.
+    @State private var openSwipeRowId: UUID?
 
     @State private var showingAddCategory = false
     @State private var showingEditCategory = false
@@ -41,6 +43,10 @@ struct AccountsView: View {
             .background(Theme.Colors.background)
             .clearsBottomAccessory()
             .reportsScroll(to: $isScrolled)
+            // Скролл закрывает открытую свайпом строку (как в ленте Главной).
+            .onScrollPhaseChange { _, newPhase in
+                if newPhase == .interacting, openSwipeRowId != nil { openSwipeRowId = nil }
+            }
             .navigationTitle("Счета")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -98,15 +104,20 @@ struct AccountsView: View {
     private var accountsCard: some View {
         VStack(spacing: 0) {
             ForEach(viewModel.accounts) { account in
-                Button {
-                    viewModel.dismissUndo()
-                    onSelectAccount(account.id)
-                } label: {
-                    AccountRow(account: account, balance: viewModel.balance(for: account))
-                        // Фон у строки — чтобы превью контекстного меню не было прозрачным.
-                        .background(Theme.Colors.card)
-                }
-                .buttonStyle(.plain)
+                // Свайп влево — «Скрыть» (длинный свайп скрывает сразу), тап — Главная с фильтром.
+                // Фон строки (карточка) задаёт SwipeToDeleteRow — превью меню не прозрачное.
+                SwipeToDeleteRow(
+                    id: account.id,
+                    openRowId: $openSwipeRowId,
+                    content: { AccountRow(account: account, balance: viewModel.balance(for: account)) },
+                    onTap: {
+                        viewModel.dismissUndo()
+                        onSelectAccount(account.id)
+                    },
+                    onDelete: { await viewModel.archive(account) },
+                    actionTitle: "Скрыть",
+                    actionIcon: AppIcon.archive
+                )
                 // Долгое нажатие → меню; можно не отпуская провести палец на пункт (§«Минимум тапов»).
                 .contextMenu {
                     Button {

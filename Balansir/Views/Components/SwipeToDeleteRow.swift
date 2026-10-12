@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Строка со свайпом влево для удаления (§4.2). Работает внутри `ScrollView`,
+/// Строка со свайпом влево для удаления (§4.2) или скрытия (счета, §4.5). Работает внутри `ScrollView`,
 /// где нативный `.swipeActions` не действует (он только внутри `List`).
 /// - короткий свайп открывает кнопку «Удалить», тап по ней удаляет;
 /// - длинный свайп (за `Theme.Swipe.fullSwipeFraction` ширины строки) удаляет одним движением,
@@ -16,6 +16,9 @@ struct SwipeToDeleteRow<Content: View>: View {
     let onTap: () -> Void
     /// Удаление. Возвращает `false`, если не удалось (строка тогда возвращается на место).
     let onDelete: () async -> Bool
+    /// Подпись и иконка кнопки: «Удалить» в ленте, «Скрыть» на вкладке «Счета».
+    var actionTitle = "Удалить"
+    var actionIcon = AppIcon.trash
 
     @State private var offset: CGFloat = 0
     @State private var startOffset: CGFloat = 0
@@ -89,9 +92,9 @@ struct SwipeToDeleteRow<Content: View>: View {
                     performDelete()
                 } label: {
                     VStack(spacing: Theme.Spacing.xs) {
-                        AppIcon.image(named: AppIcon.trash)
+                        AppIcon.image(named: actionIcon)
                             .font(Theme.Font.swipeActionIcon)
-                        Text("Удалить")
+                        Text(actionTitle)
                             .font(Theme.Font.time)
                     }
                     .foregroundStyle(Theme.Colors.onColor)

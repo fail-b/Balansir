@@ -48,12 +48,18 @@ final class AccountsViewModel: Identifiable {
 
     // MARK: - Скрытие счёта с отменой
 
-    func archive(_ account: AccountModel) async {
+    /// Скрывает счёт. `false` — не удалось (строка со свайпом тогда возвращается на место).
+    @discardableResult
+    func archive(_ account: AccountModel) async -> Bool {
         do {
             try await accountRepo.archive(account.id)
             accounts.removeAll { $0.id == account.id }
             recentlyArchived = account
-        } catch { errorMessage = error.localizedDescription }
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
     }
 
     /// «Отменить» на плашке: возвращает последний скрытый счёт.
