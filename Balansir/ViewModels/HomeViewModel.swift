@@ -73,14 +73,17 @@ final class HomeViewModel {
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
     private let entryRepo: any EntryRepository
+    /// Только для шита операции (`makeAddEntryViewModel`); теги ленты приходят в `EntryModel.tags`.
+    private let tagRepo: any TagRepository
     /// Локаль названий месяцев и чисел в поиске (DI: в тестах — явная).
     private let locale: Locale
 
     init(accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository,
-         locale: Locale = .current) {
+         tagRepo: any TagRepository, locale: Locale = .current) {
         self.accountRepo = accountRepo
         self.categoryRepo = categoryRepo
         self.entryRepo = entryRepo
+        self.tagRepo = tagRepo
         self.locale = locale
         let f = NumberFormatter()
         f.numberStyle = .decimal
@@ -336,7 +339,8 @@ final class HomeViewModel {
     }
 
     func makeAddEntryViewModel(for entry: EntryModel? = nil) -> AddEntryViewModel {
-        AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, locale: locale)
+        AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo,
+                          tagRepo: tagRepo, locale: locale)
     }
 
     func makeAccountFormViewModel(for account: AccountModel? = nil) -> AccountFormViewModel {

@@ -115,6 +115,32 @@ final class MockEntryRepository: EntryRepository {
     }
 }
 
+@MainActor
+final class MockTagRepository: TagRepository {
+    /// Все теги, включая скрытые (как в Core Data).
+    var tags: [TagModel] = []
+    var shouldThrow = false
+
+    func fetchAll() async throws -> [TagModel] {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        return tags
+    }
+
+    func save(_ tag: TagModel) async throws {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        if let idx = tags.firstIndex(where: { $0.id == tag.id }) {
+            tags[idx] = tag
+        } else {
+            tags.append(tag)
+        }
+    }
+
+    func archive(_ id: UUID) async throws {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        if let idx = tags.firstIndex(where: { $0.id == id }) { tags[idx].isArchived = true }
+    }
+}
+
 // MARK: - Фабрики тестовых моделей
 
 @MainActor
@@ -152,14 +178,22 @@ extension EntryModel {
         daysAgo: Int = 0,
         from: AccountModel? = nil,
         to: AccountModel? = nil,
-        category: CategoryModel? = nil
+        category: CategoryModel? = nil,
+        tags: [TagModel] = []
     ) -> EntryModel {
         let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date())!
         return EntryModel(
             id: UUID(), date: date, type: type, amount: amount, currency: "RUB",
-            note: nil, tags: nil, isRecurring: false, isSoftDeleted: false,
+            note: nil, tags: tags, isRecurring: false, isSoftDeleted: false,
             createdAt: Date(), updatedAt: Date(),
             fromAccount: from, toAccount: to, category: category
         )
+    }
+}
+
+@MainActor
+extension TagModel {
+    static func makeTest(name: String = "Тег", isArchived: Bool = false) -> TagModel {
+        TagModel(id: UUID(), name: name, isArchived: isArchived, createdAt: Date(), updatedAt: Date())
     }
 }

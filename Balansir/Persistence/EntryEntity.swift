@@ -9,7 +9,6 @@ public class Entry: NSManagedObject {
     @NSManaged public var amount: Double
     @NSManaged public var currency: String
     @NSManaged public var note: String?
-    @NSManaged public var tags: String?
     @NSManaged public var isRecurring: Bool
     @NSManaged public var isSoftDeleted: Bool
     @NSManaged public var createdAt: Date
@@ -17,6 +16,8 @@ public class Entry: NSManagedObject {
     @NSManaged public var fromAccount: Account?
     @NSManaged public var toAccount: Account?
     @NSManaged public var category: Category?
+    /// Теги операции (связь «многие ко многим»). Обычно один; два — только у импортированных.
+    @NSManaged public var tagSet: NSSet?
 
     @nonobjc public class func fetchRequest() -> NSFetchRequest<Entry> {
         NSFetchRequest<Entry>(entityName: "Entry")

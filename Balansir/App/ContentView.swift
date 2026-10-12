@@ -25,9 +25,10 @@ struct ContentView: View {
     init(accountRepo: any AccountRepository,
          categoryRepo: any CategoryRepository,
          entryRepo: any EntryRepository,
+         tagRepo: any TagRepository,
          isLaunchFinished: Bool = true) {
         self.isLaunchFinished = isLaunchFinished
-        _homeVM = State(wrappedValue: HomeViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
+        _homeVM = State(wrappedValue: HomeViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: tagRepo))
         _statisticsVM = State(wrappedValue: StatisticsViewModel(entryRepo: entryRepo))
         _accountsVM = State(wrappedValue: AccountsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
     }

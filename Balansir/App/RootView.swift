@@ -8,6 +8,7 @@ struct RootView: View {
     let accountRepo: any AccountRepository
     let categoryRepo: any CategoryRepository
     let entryRepo: any EntryRepository
+    let tagRepo: any TagRepository
 
     var body: some View {
         ZStack {
@@ -15,6 +16,7 @@ struct RootView: View {
                 accountRepo: accountRepo,
                 categoryRepo: categoryRepo,
                 entryRepo: entryRepo,
+                tagRepo: tagRepo,
                 isLaunchFinished: !launchVM.isSplashVisible
             )
             .accessibilityHidden(launchVM.isSplashVisible)

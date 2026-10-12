@@ -71,7 +71,7 @@ struct HomeMonthFilterTests {
     ) -> EntryModel {
         EntryModel(
             id: UUID(), date: date, type: type, amount: amount, currency: "RUB",
-            note: note, tags: nil, isRecurring: false, isSoftDeleted: false,
+            note: note, tags: [], isRecurring: false, isSoftDeleted: false,
             createdAt: date, updatedAt: date,
             fromAccount: from, toAccount: to, category: nil
         )
@@ -82,7 +82,7 @@ struct HomeMonthFilterTests {
         accountRepo.accounts = accounts
         let entryRepo = MockEntryRepository()
         entryRepo.entries = entries
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo,
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(),
                                locale: TestLocale.ru)
         await vm.load()
         return vm
@@ -181,7 +181,7 @@ struct AddEntryDateTests {
     private func makeVM(_ entryRepo: MockEntryRepository) async -> AddEntryViewModel {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [AccountModel.makeTest()]
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.amountString = "100"
         return vm

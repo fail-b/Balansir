@@ -10,7 +10,9 @@ extension Entry {
             amount: Decimal(amount),
             currency: currency,
             note: note,
-            tags: tags,
+            tags: ((tagSet as? Set<TagEntity>) ?? [])
+                .map { $0.toModel() }
+                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending },
             isRecurring: isRecurring,
             isSoftDeleted: isSoftDeleted,
             createdAt: createdAt,
@@ -27,7 +29,6 @@ extension Entry {
         amount = NSDecimalNumber(decimal: model.amount).doubleValue
         currency = model.currency
         note = model.note
-        tags = model.tags
         isRecurring = model.isRecurring
         isSoftDeleted = model.isSoftDeleted
         updatedAt = Date()

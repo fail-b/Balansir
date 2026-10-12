@@ -22,17 +22,19 @@ final class AddEntryViewModel: Identifiable {
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
     private let entryRepo: any EntryRepository
+    private let tagRepo: any TagRepository
 
     /// Локаль разделителей в поле суммы и сумм в подписях счетов (DI: в тестах — явная).
     private let locale: Locale
 
     init(entry: EntryModel? = nil, accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository,
-         locale: Locale = .current) {
+         tagRepo: any TagRepository, locale: Locale = .current) {
         self.locale = locale
         self.editingEntry = entry
         self.accountRepo = accountRepo
         self.categoryRepo = categoryRepo
         self.entryRepo = entryRepo
+        self.tagRepo = tagRepo
     }
 
     var isEditing: Bool { editingEntry != nil }
@@ -163,7 +165,7 @@ final class AddEntryViewModel: Identifiable {
             amount: amount,
             currency: currency,
             note: note.isEmpty ? nil : note,
-            tags: editingEntry?.tags,
+            tags: editingEntry?.tags ?? [],
             isRecurring: editingEntry?.isRecurring ?? false,
             isSoftDeleted: false,
             createdAt: editingEntry?.createdAt ?? now,

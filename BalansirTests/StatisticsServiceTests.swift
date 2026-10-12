@@ -21,7 +21,7 @@ enum StatsFixture {
     static func entry(_ type: EntryType, _ amount: Decimal, on date: Date, category: CategoryModel? = nil) -> EntryModel {
         EntryModel(
             id: UUID(), date: date, type: type, amount: amount, currency: "RUB",
-            note: nil, tags: nil, isRecurring: false, isSoftDeleted: false,
+            note: nil, tags: [], isRecurring: false, isSoftDeleted: false,
             createdAt: date, updatedAt: date,
             fromAccount: nil, toAccount: nil, category: category
         )

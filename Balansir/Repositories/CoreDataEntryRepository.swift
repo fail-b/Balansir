@@ -49,6 +49,14 @@ final class CoreDataEntryRepository: EntryRepository {
             } else {
                 entity.category = nil
             }
+            let tagIds = entry.tags.map(\.id)
+            if tagIds.isEmpty {
+                entity.tagSet = nil
+            } else {
+                let req = TagEntity.fetchRequest()
+                req.predicate = NSPredicate(format: "id IN %@", tagIds as NSArray)
+                entity.tagSet = NSSet(array: try self.context.fetch(req))
+            }
 
             try self.context.save()
         }

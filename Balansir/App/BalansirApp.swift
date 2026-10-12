@@ -15,7 +15,8 @@ struct BalansirApp: App {
                 launchVM: launchVM,
                 accountRepo: CoreDataAccountRepository(context: persistence.container.viewContext),
                 categoryRepo: CoreDataCategoryRepository(context: persistence.container.viewContext),
-                entryRepo: CoreDataEntryRepository(context: persistence.container.viewContext)
+                entryRepo: CoreDataEntryRepository(context: persistence.container.viewContext),
+                tagRepo: CoreDataTagRepository(context: persistence.container.viewContext)
             )
             .preferredColorScheme(appearance.colorScheme)
         }

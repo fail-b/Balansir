@@ -8,7 +8,8 @@ struct EntryModel: Identifiable {
     var amount: Decimal
     var currency: String
     var note: String?
-    var tags: String?
+    /// Теги (§4.2). В шите ставится один; два бывают только у импортированных операций.
+    var tags: [TagModel]
     var isRecurring: Bool
     var isSoftDeleted: Bool
     let createdAt: Date
