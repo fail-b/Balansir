@@ -182,8 +182,10 @@ struct AccountsViewModelTests {
 
     // MARK: скрытие категорий с отменой
 
-    private func makeVM(_ categoryRepo: MockCategoryRepository, accountRepo: MockAccountRepository = MockAccountRepository()) -> AccountsViewModel {
-        AccountsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+    // Без значения по умолчанию `MockAccountRepository()`: тестовый таргет не на MainActor,
+    // и default-аргумент вычислялся бы вне главного актора (ошибка компиляции).
+    private func makeVM(_ categoryRepo: MockCategoryRepository, accountRepo: MockAccountRepository? = nil) -> AccountsViewModel {
+        AccountsViewModel(accountRepo: accountRepo ?? MockAccountRepository(), categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
     }
 
     @Test func скрытие_категории_показывает_плашку() async {
