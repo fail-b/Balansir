@@ -17,7 +17,7 @@ struct SwipeToDeleteRow<Content: View>: View {
     /// Удаление. Возвращает `false`, если не удалось (строка тогда возвращается на место).
     let onDelete: () async -> Bool
     /// Подпись и иконка кнопки: «Удалить» в ленте, «Скрыть» на вкладке «Счета».
-    var actionTitle = "Удалить"
+    var actionTitle = String(localized: "Delete")
     var actionIcon = AppIcon.trash
 
     @State private var offset: CGFloat = 0

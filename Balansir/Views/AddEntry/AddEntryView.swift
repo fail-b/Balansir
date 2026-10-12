@@ -24,7 +24,7 @@ struct AddEntryView: View {
         .presentationCornerRadius(Theme.Radius.sheet)
         .presentationDragIndicator(.visible)
         .task { await viewModel.load() }
-        .alert("Ошибка", isPresented: Binding(
+        .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
@@ -76,7 +76,7 @@ struct AddEntryView: View {
 
     private var header: some View {
         ZStack {
-            Text(viewModel.isEditing ? "Редактировать" : "Новая операция")
+            Text(viewModel.isEditing ? "Edit Transaction" : "New Transaction")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Theme.Colors.ink)
             HStack {
@@ -117,17 +117,16 @@ struct AddEntryView: View {
 
     private var datePickerSheet: some View {
         NavigationStack {
-            DatePicker("Дата", selection: $viewModel.date, in: ...viewModel.latestAllowedDate, displayedComponents: .date)
+            DatePicker("Date", selection: $viewModel.date, in: ...viewModel.latestAllowedDate, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .labelsHidden()
-                .environment(\.locale, Locale(identifier: "ru_RU"))
                 .tint(Theme.Colors.accent)
                 .padding(.horizontal, Theme.Spacing.l)
-                .navigationTitle("Дата")
+                .navigationTitle("Date")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Готово") { showDatePicker = false }
+                        Button("Done") { showDatePicker = false }
                     }
                 }
         }
@@ -136,11 +135,8 @@ struct AddEntryView: View {
     }
 
     private var dateLabel: String {
-        if Calendar.current.isDateInToday(viewModel.date) { return "Сегодня" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.dateFormat = "d MMM"
-        return f.string(from: viewModel.date)
+        if Calendar.current.isDateInToday(viewModel.date) { return String(localized: "Today") }
+        return viewModel.date.formatted(.dateTime.day().month(.abbreviated))
     }
 
     // MARK: - Сегмент типа
@@ -213,11 +209,11 @@ struct AddEntryView: View {
                 categoryStrip
                     .padding(.vertical, Theme.Spacing.m)
                 Divider().padding(.leading, Theme.Spacing.l)
-                accountRow(target: .from, label: "Счёт")
+                accountRow(target: .from, label: "Account")
             } else {
-                accountRow(target: .from, label: "Со счёта")
+                accountRow(target: .from, label: "From account")
                 Divider().padding(.leading, Theme.Spacing.l)
-                accountRow(target: .to, label: "На счёт")
+                accountRow(target: .to, label: "To account")
             }
             Divider().padding(.leading, Theme.Spacing.l)
             noteRow
@@ -263,7 +259,7 @@ struct AddEntryView: View {
         .buttonStyle(.plain)
     }
 
-    private func accountRow(target: AccountPickerTarget, label: String) -> some View {
+    private func accountRow(target: AccountPickerTarget, label: LocalizedStringKey) -> some View {
         let account = target == .from ? viewModel.selectedAccount : viewModel.selectedToAccount
         return Button {
             isNoteFocused = false
@@ -275,7 +271,7 @@ struct AddEntryView: View {
                     Text(label)
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Colors.ink2)
-                    Text(account.map { viewModel.subtitle(for: $0) } ?? "Выберите счёт")
+                    Text(account.map { viewModel.subtitle(for: $0) } ?? String(localized: "Choose an account"))
                         .font(Theme.Font.rowTitle)
                         .foregroundStyle(Theme.Colors.ink)
                 }
@@ -296,7 +292,7 @@ struct AddEntryView: View {
             AppIcon.image(named: AppIcon.note)
                 .font(.system(size: 17))
                 .foregroundStyle(Theme.Colors.ink2)
-            TextField("Заметка", text: $viewModel.note)
+            TextField("Note", text: $viewModel.note)
                 .font(Theme.Font.rowTitle)
                 .foregroundStyle(Theme.Colors.ink)
                 .focused($isNoteFocused)
@@ -318,7 +314,7 @@ struct AddEntryView: View {
                 if viewModel.errorMessage == nil { dismiss() }
             }
         } label: {
-            Text("Сохранить")
+            Text("Save")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Theme.Colors.onColor)
                 .frame(maxWidth: .infinity)
@@ -337,10 +333,10 @@ struct AddEntryView: View {
         let selectedId: UUID?
         switch target {
         case .from:
-            title = viewModel.selectedType == .transfer ? "Со счёта" : "Счёт"
+            title = viewModel.selectedType == .transfer ? String(localized: "From account") : String(localized: "Account")
             selectedId = viewModel.selectedAccount?.id
         case .to:
-            title = "На счёт"
+            title = String(localized: "To account")
             selectedId = viewModel.selectedToAccount?.id
         }
         return AccountPickerView(

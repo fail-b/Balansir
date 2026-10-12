@@ -10,14 +10,14 @@ struct StatisticsViewModelTests {
         let repo = MockEntryRepository()
         repo.entries = entries
         let today = StatsFixture.today
-        let vm = StatisticsViewModel(entryRepo: repo, calendar: StatsFixture.calendar, now: { today })
+        let vm = StatisticsViewModel(entryRepo: repo, calendar: StatsFixture.calendar, now: { today }, locale: TestLocale.ru)
         await vm.load()
         return vm
     }
 
     @Test func заголовок_с_названием_месяца() async {
         let vm = await makeVM([])
-        #expect(vm.monthTitle == "Расходы за октябрь")
+        #expect(vm.monthTitle == String(localized: "Expenses in \("октябрь")"))
     }
 
     @Test func сумма_и_среднее_за_месяц() async {
@@ -72,7 +72,7 @@ struct StatisticsViewModelTests {
             StatsFixture.entry(.expense, 100, on: StatsFixture.date(10, 4)),
         ])
         let stats = vm.categoryStats
-        #expect(stats.map(\.name) == ["Еда", "Транспорт", "Без категории"])
+        #expect(stats.map(\.name) == ["Еда", "Транспорт", String(localized: "No category")])
         #expect(stats.map(\.percent) == [60, 30, 10])
         #expect(stats[0].fraction == 1)
         #expect(stats[1].fraction == 0.5)
@@ -84,7 +84,7 @@ struct StatisticsViewModelTests {
         let repo = MockEntryRepository()
         repo.shouldThrow = true
         let today = StatsFixture.today
-        let vm = StatisticsViewModel(entryRepo: repo, calendar: StatsFixture.calendar, now: { today })
+        let vm = StatisticsViewModel(entryRepo: repo, calendar: StatsFixture.calendar, now: { today }, locale: TestLocale.ru)
         await vm.load()
         #expect(vm.errorMessage != nil)
     }

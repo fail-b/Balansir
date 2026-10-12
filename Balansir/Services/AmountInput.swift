@@ -12,7 +12,7 @@ enum NumpadKey: Hashable {
 
 /// Ввод суммы с цифровой клавиатуры — общая логика без UI для шита операции (§4.7)
 /// и поля «Баланс» в шите счёта (§4.6).
-/// Модуль хранится строкой с разделителем «.» (для `Decimal`), «,» — только на экране.
+/// Модуль хранится строкой с разделителем «.» (для `Decimal`), разделитель локали — только на экране.
 struct AmountInput {
     static let maxIntegerDigits = 9
     static let maxFractionDigits = 2
@@ -65,12 +65,12 @@ struct AmountInput {
     /// Ничего не введено (показывается серым «0»).
     var isEmpty: Bool { magnitude == "0" && !isNegative }
 
-    /// Для показа: «−1 234 567,5». Целая часть группируется пробелами (локализация — задача 10).
-    var formatted: String {
+    /// Для показа: «−1 234 567,5» (ru), «−1,234,567.5» (en). Разделители — из локали.
+    func formatted(locale: Locale) -> String {
         let parts = magnitude.split(separator: ".", maxSplits: 1, omittingEmptySubsequences: false)
-        var result = (isNegative ? "\u{2212}" : "") + Self.groupThousands(String(parts[0]))
+        var result = (isNegative ? "\u{2212}" : "") + Self.groupThousands(String(parts[0]), locale: locale)
         if magnitude.contains(".") {
-            result += "," + (parts.count > 1 ? String(parts[1]) : "")
+            result += (locale.decimalSeparator ?? ".") + (parts.count > 1 ? String(parts[1]) : "")
         }
         return result
     }
@@ -106,17 +106,8 @@ struct AmountInput {
         }
     }
 
-    private static let groupingFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = " "
-        f.minimumFractionDigits = 0
-        f.maximumFractionDigits = 0
-        return f
-    }()
-
-    private static func groupThousands(_ digits: String) -> String {
+    private static func groupThousands(_ digits: String, locale: Locale) -> String {
         guard let number = Int(digits) else { return digits }
-        return groupingFormatter.string(from: NSNumber(value: number)) ?? digits
+        return number.formatted(.number.locale(locale).grouping(.automatic))
     }
 }

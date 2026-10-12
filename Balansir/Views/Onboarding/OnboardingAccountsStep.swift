@@ -15,11 +15,11 @@ struct OnboardingAccountsStep: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                     VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-                        Text("Где вы храните деньги?")
+                        Text("Where do you keep your money?")
                             .font(Theme.Font.screenTitle)
                             .tracking(Theme.Font.Tracking.screenTitle)
                             .foregroundStyle(Theme.Colors.ink)
-                        Text("Добавьте карты, наличные и вклады. Название — любое, как вам удобно.")
+                        Text("Add your cards, cash and deposits.")
                             .font(Theme.Font.body)
                             .foregroundStyle(Theme.Colors.ink2)
                     }
@@ -94,7 +94,7 @@ struct OnboardingAccountsStep: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Удалить счёт \(account.name)")
+                    .accessibilityLabel("Delete account \(account.name)")
                 }
                 .padding(.trailing, Theme.Spacing.xs)
                 .transition(.opacity)
@@ -126,7 +126,7 @@ struct OnboardingAccountsStep: View {
         } label: {
             HStack(spacing: Theme.Spacing.s) {
                 AppIcon.image(named: AppIcon.add)
-                Text("Добавить счёт")
+                Text("Add Account")
             }
             .font(Theme.Font.actionButton)
             .foregroundStyle(Theme.Colors.accent)

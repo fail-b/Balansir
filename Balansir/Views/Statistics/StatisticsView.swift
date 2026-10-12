@@ -21,9 +21,9 @@ struct StatisticsView: View {
             .background(Theme.Colors.background)
             .clearsBottomAccessory()
             .reportsScroll(to: $isScrolled)
-            .navigationTitle("Статистика")
+            .navigationTitle("Statistics")
             .task { await viewModel.load() }
-            .alert("Ошибка", isPresented: Binding(
+            .alert("Error", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
             )) {
@@ -46,7 +46,7 @@ struct StatisticsView: View {
                     .font(Theme.Font.heroAmount)
                     .tracking(Theme.Font.Tracking.heroAmount)
                     .foregroundStyle(Theme.Colors.ink)
-                Text("В среднем \(MoneyFormatter.format(viewModel.dailyAverage)) в день")
+                Text("Avg. \(MoneyFormatter.format(viewModel.dailyAverage)) per day")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Colors.ink2)
             }
@@ -62,7 +62,7 @@ struct StatisticsView: View {
 
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.m) {
-            Text("По категориям")
+            Text("By category")
                 .font(Theme.Font.headline)
                 .foregroundStyle(Theme.Colors.ink)
                 .padding(.leading, Theme.Spacing.xs)

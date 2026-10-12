@@ -24,7 +24,7 @@ struct OnboardingView: View {
         .onChange(of: viewModel.isFinished) { _, finished in
             if finished { dismiss() }
         }
-        .alert("Ошибка", isPresented: Binding(
+        .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
@@ -53,7 +53,7 @@ struct OnboardingView: View {
             .buttonStyle(.plain)
             .opacity(viewModel.canGoBack ? 1 : 0)
             .disabled(!viewModel.canGoBack)
-            .accessibilityLabel("Назад")
+            .accessibilityLabel("Back")
 
             HStack(spacing: Theme.Spacing.s) {
                 ForEach(OnboardingStep.allCases, id: \.self) { step in
@@ -63,9 +63,9 @@ struct OnboardingView: View {
                 }
             }
             .accessibilityElement()
-            .accessibilityLabel("Шаг \(viewModel.step.rawValue + 1) из \(OnboardingStep.allCases.count)")
+            .accessibilityLabel("Step \(viewModel.step.rawValue + 1) of \(OnboardingStep.allCases.count)")
 
-            Button("Пропустить") {
+            Button("Skip") {
                 Task { await viewModel.skip() }
             }
             .font(Theme.Font.body)

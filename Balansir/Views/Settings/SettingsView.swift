@@ -16,50 +16,50 @@ struct SettingsView: View {
     var body: some View {
         List {
             Section {
-                Picker("Тема", selection: $appearance) {
+                Picker("Theme", selection: $appearance) {
                     ForEach(AppearanceMode.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-            } header: { sectionHeader("Тема") }
+            } header: { sectionHeader("Theme") }
 
             // Заглушки: экран Статистики эти значения пока не читает.
             Section {
-                Picker("Период", selection: $statsPeriod) {
+                Picker("Period", selection: $statsPeriod) {
                     ForEach(StatsPeriod.allCases) { Text($0.title).tag($0) }
                 }
-                Picker("Вид диаграммы", selection: $statsChartKind) {
+                Picker("Chart type", selection: $statsChartKind) {
                     ForEach(StatsChartKind.allCases) { Text($0.title).tag($0) }
                 }
-                Picker("Начало недели", selection: $weekStart) {
+                Picker("Week starts on", selection: $weekStart) {
                     ForEach(WeekStart.allCases) { Text($0.title).tag($0) }
                 }
-            } header: { sectionHeader("Статистика") }
+            } header: { sectionHeader("Statistics") }
 
             Section {
-                stubRow("Валюта", value: "Рубль, ₽")
-                stubRow("Начало месяца", value: "1 число")
-            } header: { sectionHeader("Учёт") }
+                stubRow("Currency", value: "Ruble, ₽")
+                stubRow("Month starts on", value: "Day 1")
+            } header: { sectionHeader("Accounting") }
 
             Section {
                 Toggle(isOn: $eveningReminder) {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
-                        Text("Напоминание вечером")
-                        Text("В 21:00, если за день нет операций")
+                        Text("Evening reminder")
+                        Text("At 9 PM if there are no transactions that day")
                             .font(Theme.Font.caption)
                             .foregroundStyle(Theme.Colors.ink2)
                     }
                 }
-                Toggle("Вход по Face ID", isOn: $faceID)
-            } header: { sectionHeader("Напоминания и защита") }
+                Toggle("Unlock with Face ID", isOn: $faceID)
+            } header: { sectionHeader("Reminders & Security") }
 
             Section {
-                stubAction("Экспорт в CSV", icon: AppIcon.export)
-                stubAction("Импорт из CoinKeeper", icon: AppIcon.importData)
-                Button("Показать приветствие") { hasSeenOnboarding = false }
-            } header: { sectionHeader("Данные") }
+                stubAction("Export to CSV", icon: AppIcon.export)
+                stubAction("Import from CoinKeeper", icon: AppIcon.importData)
+                Button("Show welcome screens") { hasSeenOnboarding = false }
+            } header: { sectionHeader("Data") }
 
             Section {
-                Text("Balansir \(appVersion)")
+                Text(verbatim: "Balansir \(appVersion)")
                     .font(Theme.Font.appVersion)
                     .foregroundStyle(Theme.Colors.ink2)
                     .frame(maxWidth: .infinity)
@@ -72,7 +72,7 @@ struct SettingsView: View {
         .tint(Theme.Colors.accent)
         .scrollContentBackground(.hidden)
         .background(Theme.Colors.background)
-        .navigationTitle("Настройки")
+        .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -80,21 +80,21 @@ struct SettingsView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     }
 
-    private func sectionHeader(_ title: String) -> some View {
+    private func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(Theme.Font.caption)
             .foregroundStyle(Theme.Colors.ink2)
     }
 
     /// Строка «Название — значение» без действия (пока заглушка).
-    private func stubRow(_ title: String, value: String) -> some View {
+    private func stubRow(_ title: LocalizedStringKey, value: LocalizedStringKey) -> some View {
         LabeledContent(title) {
             Text(value).foregroundStyle(Theme.Colors.ink2)
         }
     }
 
     /// Кнопка-заглушка: видна, но неактивна, пока функция не сделана.
-    private func stubAction(_ title: String, icon: String?) -> some View {
+    private func stubAction(_ title: LocalizedStringKey, icon: String?) -> some View {
         Button {} label: {
             if let icon {
                 Label { Text(title) } icon: { AppIcon.image(named: icon) }

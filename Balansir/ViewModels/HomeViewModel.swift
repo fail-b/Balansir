@@ -66,25 +66,29 @@ final class HomeViewModel {
     /// Последняя удалённая операция — пока видна плашка «Удалено · Отменить» (§4.2).
     private(set) var recentlyDeleted: EntryModel?
 
-    // Строка суммы для числового поиска: без разделителей тысяч, запятая ru_RU, без хвостовых нулей («2400,5»).
-    private static let amountSearchFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.locale = Locale(identifier: "ru_RU")
-        f.usesGroupingSeparator = false
-        f.minimumFractionDigits = 0
-        f.maximumFractionDigits = 2
-        return f
-    }()
+    // Строка суммы для числового поиска: без разделителей тысяч, десятичный разделитель локали,
+    // без хвостовых нулей («2400,5» в ru, «2400.5» в en).
+    private let amountSearchFormatter: NumberFormatter
 
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
     private let entryRepo: any EntryRepository
+    /// Локаль названий месяцев и чисел в поиске (DI: в тестах — явная).
+    private let locale: Locale
 
-    init(accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository) {
+    init(accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository,
+         locale: Locale = .current) {
         self.accountRepo = accountRepo
         self.categoryRepo = categoryRepo
         self.entryRepo = entryRepo
+        self.locale = locale
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.locale = locale
+        f.usesGroupingSeparator = false
+        f.minimumFractionDigits = 0
+        f.maximumFractionDigits = 2
+        amountSearchFormatter = f
     }
 
     var totalBalance: Decimal {
@@ -112,7 +116,12 @@ final class HomeViewModel {
 
     /// Название текущего месяца для шапки Главной и сводки таб-бара: «Октябрь».
     var currentMonthName: String {
-        StatisticsService.monthName(for: Date(), calendar: .current)
+        StatisticsService.monthName(for: Date(), calendar: .current, locale: locale)
+    }
+
+    // Месяц внутри фразы «Расходы за октябрь» — регистр как в локали.
+    private var currentMonthInPhrase: String {
+        StatisticsService.monthNameInPhrase(for: Date(), calendar: .current, locale: locale)
     }
 
     // MARK: - Выбор месяца (§4.1)
@@ -121,14 +130,14 @@ final class HomeViewModel {
     var monthOptions: [MonthOption] {
         let now = Date()
         return monthStarts.map {
-            MonthOption(start: $0, title: StatisticsService.monthTitle(for: $0, now: now, calendar: .current))
+            MonthOption(start: $0, title: StatisticsService.monthTitle(for: $0, now: now, calendar: .current, locale: locale))
         }
     }
 
     /// Заголовок шапки: выбранный месяц или «Все операции».
     var headerTitle: String {
-        guard let month = selectedMonth else { return "Все операции" }
-        return StatisticsService.monthTitle(for: month, now: Date(), calendar: .current)
+        guard let month = selectedMonth else { return String(localized: "All transactions") }
+        return StatisticsService.monthTitle(for: month, now: Date(), calendar: .current, locale: locale)
     }
 
     /// Месяц сводки hero: выбранный, без фильтра — текущий.
@@ -146,21 +155,21 @@ final class HomeViewModel {
 
     /// Подписи hero: без фильтра месяц не виден в шапке («Все операции») — пишем его в подписи.
     var heroExpenseTitle: String {
-        selectedMonth == nil ? "Расходы за " + currentMonthName.lowercased() : "Расходы"
+        selectedMonth == nil ? String(localized: "Expenses in \(currentMonthInPhrase)") : String(localized: "Expenses")
     }
 
     var heroIncomeTitle: String {
-        selectedMonth == nil ? "Доходы за " + currentMonthName.lowercased() : "Доходы"
+        selectedMonth == nil ? String(localized: "Income in \(currentMonthInPhrase)") : String(localized: "Income")
     }
 
     /// Текст пустой ленты (вне поиска) с учётом фильтров счёта и месяца.
     var emptyFeedMessage: String {
         let byMonth = selectedMonth != nil && !isSearchActive
         switch (selectedAccountId != nil, byMonth) {
-        case (true, true): return "По этому счёту в этом месяце операций нет."
-        case (false, true): return "В этом месяце операций нет."
-        case (true, false): return "По этому счёту операций нет."
-        case (false, false): return "Операций пока нет. Нажмите «+», чтобы добавить первую."
+        case (true, true): return String(localized: "No transactions for this account this month.")
+        case (false, true): return String(localized: "No transactions this month.")
+        case (true, false): return String(localized: "No transactions for this account.")
+        case (false, false): return String(localized: "No transactions yet. Tap “+” to add your first one.")
         }
     }
 
@@ -215,13 +224,13 @@ final class HomeViewModel {
 
     // Нормализация запроса/текста: без учёта регистра и диакритики (ё = е).
     private func normalize(_ text: String) -> String {
-        text.folding(options: [.caseInsensitive, .diacriticInsensitive],
-                     locale: Locale(identifier: "ru_RU"))
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: locale)
     }
 
-    // Запрос числовой, если состоит только из цифр, пробелов и запятой.
+    // Запрос числовой, если состоит только из цифр, пробелов и десятичного разделителя локали.
     private func isNumericQuery(_ query: String) -> Bool {
-        !query.isEmpty && query.allSatisfy { $0.isNumber || $0 == " " || $0 == "," }
+        let separator = Character(locale.decimalSeparator ?? ",")
+        return !query.isEmpty && query.allSatisfy { $0.isNumber || $0 == " " || $0 == separator }
     }
 
     // Поиск по категории, счёту (у перевода — по обоим) и заметке.
@@ -236,7 +245,7 @@ final class HomeViewModel {
 
     // Числовой поиск по сумме: сравнение по префиксу строки суммы без разделителей.
     private func amountMatches(_ entry: EntryModel, numericNeedle: String) -> Bool {
-        let amountString = Self.amountSearchFormatter.string(from: entry.amount as NSDecimalNumber) ?? ""
+        let amountString = amountSearchFormatter.string(from: entry.amount as NSDecimalNumber) ?? ""
         return amountString.hasPrefix(numericNeedle)
     }
 
@@ -251,7 +260,7 @@ final class HomeViewModel {
         return totals.prefix(4).map { item in
             let fraction = NSDecimalNumber(decimal: item.total / expense).doubleValue
             return CategorySegment(
-                name: item.category?.name ?? "Прочее",
+                name: item.category?.name ?? String(localized: "Other"),
                 colorHex: item.category?.colorHex ?? "#8E8E93",
                 fraction: fraction,
                 percent: Int((fraction * 100).rounded())
@@ -327,14 +336,14 @@ final class HomeViewModel {
     }
 
     func makeAddEntryViewModel(for entry: EntryModel? = nil) -> AddEntryViewModel {
-        AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo)
+        AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, locale: locale)
     }
 
     func makeAccountFormViewModel(for account: AccountModel? = nil) -> AccountFormViewModel {
-        AccountFormViewModel(account: account, accountRepo: accountRepo)
+        AccountFormViewModel(account: account, accountRepo: accountRepo, locale: locale)
     }
 
     func makeOnboardingViewModel() -> OnboardingViewModel {
-        OnboardingViewModel(accountRepo: accountRepo, entryRepo: entryRepo)
+        OnboardingViewModel(accountRepo: accountRepo, entryRepo: entryRepo, locale: locale)
     }
 }

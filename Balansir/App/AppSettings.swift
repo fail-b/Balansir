@@ -19,9 +19,9 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .system: "Системная"
-        case .light: "Светлая"
-        case .dark: "Тёмная"
+        case .system: String(localized: "System")
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
         }
     }
 
@@ -43,9 +43,9 @@ enum StatsPeriod: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .week: "Неделя"
-        case .month: "Месяц"
-        case .year: "Год"
+        case .week: String(localized: "Week")
+        case .month: String(localized: "Month")
+        case .year: String(localized: "Year")
         }
     }
 }
@@ -56,9 +56,9 @@ enum StatsChartKind: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .bars: "Столбики"
-        case .line: "Линия"
-        case .pie: "Круговая"
+        case .bars: String(localized: "Bars")
+        case .line: String(localized: "Line")
+        case .pie: String(localized: "Pie")
         }
     }
 }
@@ -69,8 +69,8 @@ enum WeekStart: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .monday: "Понедельник"
-        case .sunday: "Воскресенье"
+        case .monday: String(localized: "Monday")
+        case .sunday: String(localized: "Sunday")
         }
     }
 }

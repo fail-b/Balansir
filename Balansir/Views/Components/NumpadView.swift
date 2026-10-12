@@ -11,6 +11,8 @@ enum NumpadLayout {
 
 /// Капсульная цифровая клавиатура. Логика ввода — в `AmountInput` (через VM), сюда — один колбэк.
 struct NumpadView: View {
+    /// Десятичный разделитель на клавише — из локали («,» в ru, «.» в en).
+    @Environment(\.locale) private var locale
     var layout: NumpadLayout = .amount
     let onKey: (NumpadKey) -> Void
 
@@ -87,9 +89,9 @@ struct NumpadView: View {
     @ViewBuilder
     private func label(for key: NumpadKey) -> some View {
         switch key {
-        case .digit(let digit): Text("\(digit)").font(Theme.Font.numpadKey)
-        case .separator: Text(",").font(Theme.Font.numpadKey)
-        case .minus: Text("\u{2212}").font(Theme.Font.numpadKey)
+        case .digit(let digit): Text(verbatim: "\(digit)").font(Theme.Font.numpadKey)
+        case .separator: Text(verbatim: locale.decimalSeparator ?? ".").font(Theme.Font.numpadKey)
+        case .minus: Text(verbatim: "\u{2212}").font(Theme.Font.numpadKey)
         case .backspace: AppIcon.image(named: AppIcon.backspace).font(Theme.Font.numpadIcon)
         }
     }
@@ -97,9 +99,9 @@ struct NumpadView: View {
     private func accessibilityLabel(for key: NumpadKey) -> String {
         switch key {
         case .digit(let digit): "\(digit)"
-        case .separator: "Запятая"
-        case .minus: "Минус"
-        case .backspace: "Стереть"
+        case .separator: String(localized: "Decimal separator")
+        case .minus: String(localized: "Minus")
+        case .backspace: String(localized: "Delete")
         }
     }
 }

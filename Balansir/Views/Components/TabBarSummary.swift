@@ -19,20 +19,20 @@ struct TabBarSummary: View {
         switch selectedTab {
         case .home, .add:
             if homeVM.isSearchActive && !searchQueryEmpty {
-                SummaryColumn(label: "Найдено", value: "\(homeVM.searchResultCount)", isPrimary: true)
+                SummaryColumn(label: String(localized: "Found"), value: "\(homeVM.searchResultCount)", isPrimary: true)
                 Spacer(minLength: Theme.Spacing.s)
-                SummaryColumn(label: "Расходы", value: expenseString(homeVM.searchResultExpense), isPrimary: false)
+                SummaryColumn(label: String(localized: "Expenses"), value: expenseString(homeVM.searchResultExpense), isPrimary: false)
             } else {
-                SummaryColumn(label: "Сегодня", value: expenseString(homeVM.todayExpense), isPrimary: true)
+                SummaryColumn(label: String(localized: "Today"), value: expenseString(homeVM.todayExpense), isPrimary: true)
                 Spacer(minLength: Theme.Spacing.s)
                 SummaryColumn(label: homeVM.currentMonthName, value: expenseString(homeVM.monthExpense), isPrimary: false)
             }
         case .statistics:
             SummaryColumn(label: homeVM.currentMonthName, value: MoneyFormatter.format(homeVM.monthExpense), isPrimary: true)
             Spacer(minLength: Theme.Spacing.s)
-            SummaryColumn(label: "В день", value: MoneyFormatter.format(homeVM.monthDailyAverage), isPrimary: false)
+            SummaryColumn(label: String(localized: "Per day"), value: MoneyFormatter.format(homeVM.monthDailyAverage), isPrimary: false)
         case .accounts:
-            SummaryColumn(label: "Всего на счетах", value: MoneyFormatter.balance(homeVM.totalBalance), isPrimary: true)
+            SummaryColumn(label: String(localized: "Total balance"), value: MoneyFormatter.balance(homeVM.totalBalance), isPrimary: true)
             Spacer(minLength: 0)
         }
     }

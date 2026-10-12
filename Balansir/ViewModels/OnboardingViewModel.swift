@@ -22,10 +22,14 @@ final class OnboardingViewModel: Identifiable {
     private let accountRepo: any AccountRepository
     private let entryRepo: any EntryRepository
 
-    init(accountRepo: any AccountRepository, entryRepo: any EntryRepository) {
+    /// Локаль названия месяца в демо-карточке (DI: в тестах — явная).
+    private let locale: Locale
+
+    init(accountRepo: any AccountRepository, entryRepo: any EntryRepository, locale: Locale = .current) {
         self.accountRepo = accountRepo
         self.entryRepo = entryRepo
-        self.draft = AccountFormViewModel(accountRepo: accountRepo)
+        self.locale = locale
+        self.draft = AccountFormViewModel(accountRepo: accountRepo, locale: locale)
     }
 
     // MARK: - Показ при запуске
@@ -56,7 +60,8 @@ final class OnboardingViewModel: Identifiable {
 
     // MARK: - Счёт по умолчанию («Пропустить»)
 
-    static let defaultAccountName = "Наличные"
+    /// Имя на языке интерфейса в момент создания; дальше это данные пользователя.
+    static var defaultAccountName: String { String(localized: "Cash") }
     static let defaultAccountType = AccountType.cash
     static let defaultAccountColorHex = "#4CAF50"
 
@@ -88,7 +93,7 @@ final class OnboardingViewModel: Identifiable {
             return
         }
         addedAccounts.append(saved)
-        draft = AccountFormViewModel(accountRepo: accountRepo)
+        draft = AccountFormViewModel(accountRepo: accountRepo, locale: locale)
     }
 
     /// ✕ у добавленного счёта — мягкое скрытие (операций у него ещё нет).
@@ -105,7 +110,7 @@ final class OnboardingViewModel: Identifiable {
     /// (тогда счёт добавится сам — на тап меньше).
     var canFinish: Bool { !addedAccounts.isEmpty || draft.canSave }
 
-    var finishTitle: String { canFinish ? "Готово" : "Добавьте хотя бы один счёт" }
+    var finishTitle: String { canFinish ? String(localized: "Done") : String(localized: "Add at least one account") }
 
     func finish() async {
         guard canFinish else { return }
@@ -151,6 +156,7 @@ final class OnboardingViewModel: Identifiable {
     ]
 
     var demoTitle: String {
-        "Расходы за " + StatisticsService.monthName(for: Date(), calendar: .current).lowercased()
+        let month = StatisticsService.monthNameInPhrase(for: Date(), calendar: .current, locale: locale)
+        return String(localized: "Expenses in \(month)")
     }
 }

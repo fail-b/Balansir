@@ -13,7 +13,7 @@ struct UndoToast: View {
                 .foregroundStyle(Theme.Colors.ink)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            Button("Отменить", action: onUndo)
+            Button("Undo", action: onUndo)
                 .font(Theme.Font.toastAction)
                 .foregroundStyle(Theme.Colors.accent)
                 .buttonStyle(.plain)

@@ -21,9 +21,9 @@ struct EntryModel: Identifiable {
 extension EntryModel {
     var displayTitle: String {
         switch type {
-        case .expense: return category?.name ?? "Расход"
-        case .income: return category?.name ?? "Доход"
-        case .transfer: return "Перевод"
+        case .expense: return category?.name ?? String(localized: "Expense")
+        case .income: return category?.name ?? String(localized: "entry.type.income", defaultValue: "Income")
+        case .transfer: return String(localized: "Transfer")
         }
     }
 

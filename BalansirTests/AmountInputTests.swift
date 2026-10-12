@@ -31,7 +31,7 @@ struct AmountInputTests {
     @Test func запятая_на_нуле_даёт_ноль_запятую_и_повтор_игнорируется() {
         let value = input([.separator, .separator])
         #expect(value.text == "0.")
-        #expect(value.formatted == "0,")
+        #expect(value.formatted(locale: TestLocale.ru).normalizedSpaces == "0,")
         #expect(value.value == 0)
     }
 
@@ -52,7 +52,7 @@ struct AmountInputTests {
 
     @Test func formatted_группирует_тысячи_пробелами() {
         let keys = (1...7).map { NumpadKey.digit($0) }
-        #expect(input(keys).formatted == "1 234 567")
+        #expect(input(keys).formatted(locale: TestLocale.ru).normalizedSpaces == "1 234 567")
     }
 
     // MARK: минус (баланс счёта, §4.6)
@@ -66,7 +66,7 @@ struct AmountInputTests {
     @Test func минус_в_начале_делает_число_отрицательным() {
         let value = input([.minus, .digit(1), .digit(2), .digit(3), .digit(4), .separator, .digit(5), .digit(6)], allowsNegative: true)
         #expect(value.value == Decimal(string: "-1234.56"))
-        #expect(value.formatted == "\u{2212}1 234,56")
+        #expect(value.formatted(locale: TestLocale.ru).normalizedSpaces == "\u{2212}1 234,56")
     }
 
     @Test func минус_после_цифры_или_запятой_игнорируется() {
@@ -80,7 +80,7 @@ struct AmountInputTests {
 
     @Test func минус_ноль_показывается_но_сохраняется_как_ноль() {
         let value = input([.minus], allowsNegative: true)
-        #expect(value.formatted == "\u{2212}0")
+        #expect(value.formatted(locale: TestLocale.ru).normalizedSpaces == "\u{2212}0")
         #expect(value.value == 0)
         #expect(value.isEmpty == false)
     }
@@ -104,7 +104,7 @@ struct AmountInputTests {
     @Test func init_decimal_положительное() {
         let value = AmountInput(decimal: Decimal(string: "1234.5")!)
         #expect(value.text == "1234.5")
-        #expect(value.formatted == "1 234,5")
+        #expect(value.formatted(locale: TestLocale.ru).normalizedSpaces == "1 234,5")
     }
 
     @Test func init_decimal_отрицательное_с_минусом() {
@@ -126,5 +126,17 @@ struct AmountInputTests {
         var value = AmountInput(decimal: 12)
         value.apply(.digit(3))
         #expect(value.text == "123")
+    }
+
+    // MARK: разделители по локали (задача 10)
+
+    @Test func formatted_en_US_запятая_для_тысяч_точка_для_дроби() {
+        let value = input([.digit(1), .digit(2), .digit(3), .digit(4), .separator, .digit(5)])
+        #expect(value.formatted(locale: TestLocale.en) == "1,234.5")
+    }
+
+    @Test func formatted_de_DE_точка_для_тысяч_запятая_для_дроби() {
+        let value = input([.digit(1), .digit(2), .digit(3), .digit(4), .separator, .digit(5)])
+        #expect(value.formatted(locale: TestLocale.de) == "1.234,5")
     }
 }

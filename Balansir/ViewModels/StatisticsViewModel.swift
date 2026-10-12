@@ -44,18 +44,15 @@ final class StatisticsViewModel {
     /// Дни с подписью на оси, кроме последнего дня месяца (он добавляется отдельно).
     private static let axisDays: Set<Int> = [1, 8, 15, 22]
 
-    // Название месяца в именительном падеже («октябрь»). Локаль — в задаче 10.
-    private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.dateFormat = "LLLL"
-        return f
-    }()
+    /// Локаль названия месяца (DI: в тестах — явная).
+    private let locale: Locale
 
-    init(entryRepo: any EntryRepository, calendar: Calendar = .current, now: @escaping () -> Date = Date.init) {
+    init(entryRepo: any EntryRepository, calendar: Calendar = .current, now: @escaping () -> Date = Date.init,
+         locale: Locale = .current) {
         self.entryRepo = entryRepo
         self.calendar = calendar
         self.now = now
+        self.locale = locale
     }
 
     func load() async {
@@ -71,9 +68,8 @@ final class StatisticsViewModel {
         let today = now()
         let month = StatisticsService.monthInterval(containing: today, calendar: calendar)
 
-        Self.monthFormatter.calendar = calendar
-        Self.monthFormatter.timeZone = calendar.timeZone
-        monthTitle = "Расходы за \(Self.monthFormatter.string(from: today))"
+        let monthName = StatisticsService.monthNameInPhrase(for: today, calendar: calendar, locale: locale)
+        monthTitle = String(localized: "Expenses in \(monthName)")
 
         monthExpense = StatisticsService.total(of: .expense, in: entries, interval: month)
         dailyAverage = StatisticsService.dailyAverage(total: monthExpense, today: today, calendar: calendar)
@@ -103,7 +99,7 @@ final class StatisticsViewModel {
         return totals.map { item in
             CategoryStat(
                 id: item.category?.id,
-                name: item.category?.name ?? "Без категории",
+                name: item.category?.name ?? String(localized: "No category"),
                 colorHex: item.category?.colorHex,
                 total: item.total,
                 percent: Int((Self.ratio(item.total, monthExpense) * 100).rounded()),

@@ -40,7 +40,7 @@ struct AccountFormView: View {
                     close()
                 }
             }
-            .alert("Ошибка", isPresented: Binding(
+            .alert("Error", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
             )) {
@@ -99,7 +99,7 @@ struct AccountFormView: View {
                     .glassEffect(in: .circle)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Закрыть")
+            .accessibilityLabel("Close")
         }
         .padding(.leading, Theme.Spacing.xs)
     }

@@ -198,7 +198,7 @@ struct AccountsViewModelTests {
         #expect(hidden)
         #expect(vm.categories.isEmpty)
         #expect(vm.recentlyHidden == .category(category))
-        #expect(vm.recentlyHidden?.toastTitle == "Категория «Кафе» скрыта")
+        #expect(vm.recentlyHidden?.toastTitle == String(localized: "Category “\("Кафе")” hidden"))
     }
 
     @Test func отмена_возвращает_категорию_на_прежнее_место() async {
@@ -329,6 +329,6 @@ struct AccountsViewModelTests {
         let vm = makeVM(repo)
         await vm.load()
         await vm.archive(account)
-        #expect(vm.recentlyHidden?.toastTitle == "Счёт «Тинькофф» скрыт")
+        #expect(vm.recentlyHidden?.toastTitle == String(localized: "Account “\("Тинькофф")” hidden"))
     }
 }

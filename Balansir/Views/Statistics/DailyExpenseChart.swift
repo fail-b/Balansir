@@ -35,7 +35,7 @@ struct DailyExpenseChart: View {
             .frame(height: Theme.Spacing.l)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Расходы по дням месяца")
+        .accessibilityLabel("Daily expenses this month")
     }
 
     private func height(for bar: DayBar) -> CGFloat {

@@ -79,7 +79,7 @@ struct HomeHeader: View {
     private var monthMenu: some View {
         Menu {
             Picker(selection: $viewModel.selectedMonth) {
-                Text("Все операции").tag(Date?.none)
+                Text("All transactions").tag(Date?.none)
                 Section {
                     ForEach(viewModel.monthOptions) { option in
                         Text(option.title).tag(Date?.some(option.start))
@@ -105,7 +105,7 @@ struct HomeHeader: View {
         }
         .menuOrder(.fixed)
         .buttonStyle(.plain)
-        .accessibilityLabel("Период: \(viewModel.headerTitle)")
+        .accessibilityLabel("Period: \(viewModel.headerTitle)")
     }
 
     private func searchCapsule(width: CGFloat) -> some View {
@@ -144,7 +144,7 @@ struct HomeHeader: View {
                     .font(.system(size: 17))
                     .foregroundStyle(Theme.Colors.ink2)
 
-                TextField("Категория, счёт или заметка", text: $viewModel.searchQuery)
+                TextField("Category, account or note", text: $viewModel.searchQuery)
                     .font(Theme.Font.searchField)
                     .foregroundStyle(Theme.Colors.ink)
                     .focused(searchFocus)

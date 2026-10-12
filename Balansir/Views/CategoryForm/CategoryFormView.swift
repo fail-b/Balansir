@@ -7,11 +7,11 @@ struct CategoryFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Название") {
-                    TextField("Например: Продукты", text: $viewModel.name)
+                Section("Name") {
+                    TextField("E.g., Groceries", text: $viewModel.name)
                 }
-                Section("Тип") {
-                    Picker("Тип", selection: $viewModel.selectedType) {
+                Section("Type") {
+                    Picker("Type", selection: $viewModel.selectedType) {
                         ForEach(CategoryType.allCases, id: \.self) { type in
                             Text(type.title).tag(type)
                         }
@@ -19,19 +19,19 @@ struct CategoryFormView: View {
                     .pickerStyle(.segmented)
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
-                Section("Цвет") { colorPicker }
-                Section("Иконка") { iconPicker }
+                Section("Color") { colorPicker }
+                Section("Icon") { iconPicker }
                 Section {
                     HStack {
-                        Text("Предпросмотр").foregroundStyle(.secondary)
+                        Text("Preview").foregroundStyle(.secondary)
                         Spacer()
                         categoryPreview
                     }
                 }
             }
-            .navigationTitle(viewModel.isEditing ? "Редактировать категорию" : "Новая категория")
+            .navigationTitle(viewModel.isEditing ? "Edit Category" : "New Category")
             .navigationBarTitleDisplayMode(.inline)
-            .alert("Ошибка", isPresented: Binding(
+            .alert("Error", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
             )) {
@@ -40,9 +40,9 @@ struct CategoryFormView: View {
                 Text(viewModel.errorMessage ?? "")
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("Отмена") { dismiss() } }
+                ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Сохранить") {
+                    Button("Save") {
                         Task {
                             await viewModel.save()
                             if viewModel.errorMessage == nil { dismiss() }
@@ -106,7 +106,7 @@ struct CategoryFormView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color(hex: viewModel.selectedColorHex) ?? Theme.Colors.fallback)
             }
-            Text(viewModel.name.isEmpty ? "Название категории" : viewModel.name)
+            Text(viewModel.name.isEmpty ? String(localized: "Category name") : viewModel.name)
                 .font(.callout).fontWeight(.medium)
         }
     }

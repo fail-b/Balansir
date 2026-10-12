@@ -14,7 +14,7 @@ struct OnboardingViewModelTests {
         accountRepo.accounts = accounts
         let entryRepo = MockEntryRepository()
         entryRepo.entries = entries
-        return (OnboardingViewModel(accountRepo: accountRepo, entryRepo: entryRepo), accountRepo, entryRepo)
+        return (OnboardingViewModel(accountRepo: accountRepo, entryRepo: entryRepo, locale: TestLocale.ru), accountRepo, entryRepo)
     }
 
     // MARK: показ при запуске
@@ -41,7 +41,7 @@ struct OnboardingViewModelTests {
     }
 
     @Test func базовый_счёт_не_отменяет_онбординг() async {
-        let cash = AccountModel.makeTest(name: "Наличные", initialBalance: 500, accountType: .cash)
+        let cash = AccountModel.makeTest(name: OnboardingViewModel.defaultAccountName, initialBalance: 500, accountType: .cash)
         let (vm, _, _) = makeVM(accounts: [cash], entries: [.makeTest(type: .income, amount: 10, to: cash)])
         #expect(await vm.needsOnboarding() == true)
     }
@@ -132,7 +132,7 @@ struct OnboardingViewModelTests {
     @Test func готово_недоступна_без_счетов() async {
         let (vm, _, _) = makeVM()
         #expect(vm.canFinish == false)
-        #expect(vm.finishTitle == "Добавьте хотя бы один счёт")
+        #expect(vm.finishTitle == String(localized: "Add at least one account"))
         await vm.finish()
         #expect(vm.isFinished == false)
     }
@@ -141,7 +141,7 @@ struct OnboardingViewModelTests {
         let (vm, _, _) = makeVM()
         vm.draft.name = "Карта"
         await vm.addAccount()
-        #expect(vm.finishTitle == "Готово")
+        #expect(vm.finishTitle == String(localized: "Done"))
         await vm.finish()
         #expect(vm.isFinished == true)
     }
@@ -172,7 +172,7 @@ struct OnboardingViewModelTests {
         #expect(vm.isFinished == true)
         #expect(accountRepo.accounts.count == 1)
         let cash = accountRepo.accounts[0]
-        #expect(cash.name == "Наличные")
+        #expect(cash.name == String(localized: "Cash"))
         #expect(cash.accountType == .cash)
         #expect(cash.colorHex == "#4CAF50")
         #expect(cash.initialBalance == 0)

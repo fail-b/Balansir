@@ -24,11 +24,11 @@ struct AccountsView: View {
                     if !viewModel.accounts.isEmpty {
                         accountsCard
                     }
-                    addButton("Добавить счёт") {
+                    addButton("Add Account") {
                         viewModel.dismissUndo()
                         accountFormVM = viewModel.makeAccountFormViewModel(for: nil)
                     }
-                    Text("Нажмите на счёт, чтобы увидеть его операции на главной.")
+                    Text("Tap an account to see its transactions on Home.")
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Colors.ink2)
                         .padding(.horizontal, Theme.Spacing.xs)
@@ -47,7 +47,7 @@ struct AccountsView: View {
             .onScrollPhaseChange { _, newPhase in
                 if newPhase == .interacting, openSwipeRowId != nil { openSwipeRowId = nil }
             }
-            .navigationTitle("Счета")
+            .navigationTitle("Accounts")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
@@ -69,7 +69,7 @@ struct AccountsView: View {
             .task { await viewModel.load() }
             .overlay(alignment: .bottom) { undoToast }
             .animation(.snappy, value: viewModel.recentlyHidden?.id)
-            .alert("Ошибка", isPresented: Binding(
+            .alert("Error", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
             )) {
@@ -84,7 +84,7 @@ struct AccountsView: View {
 
     private var totalCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            Text("Всего на счетах")
+            Text("Total balance")
                 .font(Theme.Font.caption)
                 .foregroundStyle(Theme.Colors.ink2)
             Text(MoneyFormatter.balance(viewModel.totalBalance))
@@ -115,7 +115,7 @@ struct AccountsView: View {
                         onSelectAccount(account.id)
                     },
                     onDelete: { await viewModel.archive(account) },
-                    actionTitle: "Скрыть",
+                    actionTitle: String(localized: "Hide"),
                     actionIcon: AppIcon.archive
                 )
                 // Долгое нажатие → меню; можно не отпуская провести палец на пункт (§«Минимум тапов»).
@@ -124,12 +124,12 @@ struct AccountsView: View {
                         viewModel.dismissUndo()
                         accountFormVM = viewModel.makeAccountFormViewModel(for: account)
                     } label: {
-                        Label { Text("Изменить") } icon: { AppIcon.image(named: AppIcon.edit) }
+                        Label { Text("Edit") } icon: { AppIcon.image(named: AppIcon.edit) }
                     }
                     Button(role: .destructive) {
                         Task { await viewModel.archive(account) }
                     } label: {
-                        Label { Text("Скрыть") } icon: { AppIcon.image(named: AppIcon.archive) }
+                        Label { Text("Hide") } icon: { AppIcon.image(named: AppIcon.archive) }
                     }
                 }
                 if account.id != viewModel.accounts.last?.id {
@@ -163,12 +163,12 @@ struct AccountsView: View {
 
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.m) {
-            Text("Категории")
+            Text("Categories")
                 .font(Theme.Font.headline)
                 .foregroundStyle(Theme.Colors.ink)
                 .padding(.leading, Theme.Spacing.xs)
 
-            Picker("Тип", selection: $viewModel.selectedCategoryType) {
+            Picker("Type", selection: $viewModel.selectedCategoryType) {
                 ForEach(CategoryType.allCases, id: \.self) { type in
                     Text(type.title).tag(type)
                 }
@@ -188,7 +188,7 @@ struct AccountsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
             }
 
-            addButton("Добавить категорию") {
+            addButton("Add Category") {
                 viewModel.dismissUndo()
                 addCategoryVM = viewModel.makeCategoryFormViewModel(for: nil)
                 showingAddCategory = true
@@ -215,19 +215,19 @@ struct AccountsView: View {
             },
             onTap: { editCategory(category) },
             onDelete: { await viewModel.archive(category) },
-            actionTitle: "Скрыть",
+            actionTitle: String(localized: "Hide"),
             actionIcon: AppIcon.archive
         )
         .contextMenu {
             Button {
                 editCategory(category)
             } label: {
-                Label { Text("Изменить") } icon: { AppIcon.image(named: AppIcon.edit) }
+                Label { Text("Edit") } icon: { AppIcon.image(named: AppIcon.edit) }
             }
             Button(role: .destructive) {
                 Task { await viewModel.archive(category) }
             } label: {
-                Label { Text("Скрыть") } icon: { AppIcon.image(named: AppIcon.archive) }
+                Label { Text("Hide") } icon: { AppIcon.image(named: AppIcon.archive) }
             }
         }
     }
@@ -241,7 +241,7 @@ struct AccountsView: View {
     // MARK: - Общие элементы
 
     /// Кнопка-карточка «+ Добавить …» (`accent`).
-    private func addButton(_ title: String, action: @escaping () -> Void) -> some View {
+    private func addButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: Theme.Spacing.s) {
                 AppIcon.image(named: AppIcon.add)

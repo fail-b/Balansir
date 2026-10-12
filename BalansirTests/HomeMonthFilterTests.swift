@@ -41,8 +41,9 @@ struct MonthOptionsServiceTests {
 
     @Test func подпись_месяца_прошлого_года_с_годом() {
         let now = StatsFixture.today
-        #expect(StatisticsService.monthTitle(for: StatsFixture.date(9, 1), now: now, calendar: cal) == "Сентябрь")
-        #expect(StatisticsService.monthTitle(for: monthStart(2025, 12), now: now, calendar: cal) == "Декабрь 2025")
+        #expect(StatisticsService.monthTitle(for: StatsFixture.date(9, 1), now: now, calendar: cal, locale: TestLocale.ru) == "Сентябрь")
+        #expect(StatisticsService.monthTitle(for: monthStart(2025, 12), now: now, calendar: cal, locale: TestLocale.ru) == "Декабрь 2025")
+        #expect(StatisticsService.monthTitle(for: monthStart(2025, 12), now: now, calendar: cal, locale: TestLocale.en) == "December 2025")
     }
 }
 
@@ -81,7 +82,8 @@ struct HomeMonthFilterTests {
         accountRepo.accounts = accounts
         let entryRepo = MockEntryRepository()
         entryRepo.entries = entries
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo,
+                               locale: TestLocale.ru)
         await vm.load()
         return vm
     }
@@ -94,11 +96,13 @@ struct HomeMonthFilterTests {
         ], accounts: [a])
 
         #expect(vm.selectedMonth == nil)
-        #expect(vm.headerTitle == "Все операции")
+        #expect(vm.headerTitle == String(localized: "All transactions"))
         #expect(vm.filteredEntries.count == 2)
         #expect(vm.heroExpense == 100)
-        #expect(vm.heroExpenseTitle == "Расходы за " + vm.currentMonthName.lowercased())
-        #expect(vm.heroIncomeTitle == "Доходы за " + vm.currentMonthName.lowercased())
+        // Месяц — из локали VM (ru: строчный), шаблон фразы — из каталога на языке симулятора.
+        let month = StatisticsService.monthNameInPhrase(for: Date(), calendar: cal, locale: TestLocale.ru)
+        #expect(vm.heroExpenseTitle == String(localized: "Expenses in \(month)"))
+        #expect(vm.heroIncomeTitle == String(localized: "Income in \(month)"))
     }
 
     @Test func выбранный_месяц_фильтрует_ленту_и_сводку() async {
@@ -114,9 +118,9 @@ struct HomeMonthFilterTests {
         #expect(vm.filteredEntries.count == 2)
         #expect(vm.heroExpense == 700)
         #expect(vm.heroIncome == 5000)
-        #expect(vm.heroExpenseTitle == "Расходы")
-        #expect(vm.heroIncomeTitle == "Доходы")
-        #expect(vm.headerTitle == StatisticsService.monthTitle(for: previousMonthStart, now: Date(), calendar: cal))
+        #expect(vm.heroExpenseTitle == String(localized: "Expenses"))
+        #expect(vm.heroIncomeTitle == String(localized: "Income"))
+        #expect(vm.headerTitle == StatisticsService.monthTitle(for: previousMonthStart, now: Date(), calendar: cal, locale: TestLocale.ru))
         // Сводка у таб-бара — всегда текущий месяц.
         #expect(vm.monthExpense == 100)
     }
@@ -164,9 +168,9 @@ struct HomeMonthFilterTests {
         vm.selectedMonth = previousMonthStart
 
         #expect(vm.filteredEntries.isEmpty)
-        #expect(vm.emptyFeedMessage == "В этом месяце операций нет.")
+        #expect(vm.emptyFeedMessage == String(localized: "No transactions this month."))
         vm.selectedAccountId = a.id
-        #expect(vm.emptyFeedMessage == "По этому счёту в этом месяце операций нет.")
+        #expect(vm.emptyFeedMessage == String(localized: "No transactions for this account this month."))
     }
 }
 
@@ -177,7 +181,7 @@ struct AddEntryDateTests {
     private func makeVM(_ entryRepo: MockEntryRepository) async -> AddEntryViewModel {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [AccountModel.makeTest()]
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, locale: TestLocale.ru)
         await vm.load()
         vm.amountString = "100"
         return vm

@@ -24,7 +24,7 @@ struct CategoryStatRow: View {
                         .foregroundStyle(Theme.Colors.ink)
                         .lineLimit(1)
                     Spacer(minLength: Theme.Spacing.s)
-                    Text("\(stat.percent)%")
+                    Text(stat.percent, format: .percent)
                         .font(Theme.Font.body.monospacedDigit())
                         .foregroundStyle(Theme.Colors.ink2)
                     Text(MoneyFormatter.format(stat.total))

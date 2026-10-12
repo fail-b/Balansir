@@ -15,8 +15,8 @@ enum HiddenItem: Equatable {
 
     var toastTitle: String {
         switch self {
-        case .account(let account): return "Счёт «\(account.name)» скрыт"
-        case .category(let category): return "Категория «\(category.name)» скрыта"
+        case .account(let account): return String(localized: "Account “\(account.name)” hidden")
+        case .category(let category): return String(localized: "Category “\(category.name)” hidden")
         }
     }
 }

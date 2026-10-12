@@ -57,10 +57,8 @@ struct AccountChip: View {
         return balance < 0 ? Theme.Colors.negativeBalance : Theme.Colors.ink2
     }
 
-    /// VoiceOver: «Название, баланс N рублей» (минус — словом).
+    /// VoiceOver: «Название, баланс −N ₽» — символ валюты и минус VoiceOver читает словами языка.
     private var accessibilityLabel: String {
-        let amount = MoneyFormatter.format(balance).replacingOccurrences(of: " ₽", with: "")
-        let signWord = balance < 0 ? "минус " : ""
-        return "\(title), баланс \(signWord)\(amount) рублей"
+        String(localized: "\(title), balance \(MoneyFormatter.balance(balance))")
     }
 }

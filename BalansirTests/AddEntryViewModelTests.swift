@@ -9,7 +9,7 @@ struct AddEntryViewModelTests {
     private func makeVM() -> AddEntryViewModel {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [AccountModel.makeTest()]
-        return AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        return AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), locale: TestLocale.ru)
     }
 
     // MARK: canSave
@@ -20,7 +20,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [a1, a2]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.amountString = "500"
@@ -35,7 +35,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [a1]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.amountString = "500"
@@ -50,7 +50,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [account]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .expense
         vm.amountString = "100"
@@ -68,7 +68,7 @@ struct AddEntryViewModelTests {
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [category]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .expense
         vm.amountString = "0"
@@ -89,7 +89,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [category]
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .expense
         vm.amountString = "150"
@@ -111,7 +111,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [category]
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .income
         vm.amountString = "300"
@@ -131,7 +131,7 @@ struct AddEntryViewModelTests {
         accountRepo.accounts = [a1, a2]
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.amountString = "200"
@@ -162,7 +162,7 @@ struct AddEntryViewModelTests {
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [category]
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.isEditing == true)
@@ -181,7 +181,7 @@ struct AddEntryViewModelTests {
         for key: NumpadKey in [.digit(1), .digit(2), .digit(3), .digit(4), .separator, .digit(5)] { vm.press(key) }
         vm.press(.minus)   // в операции минуса нет
         #expect(vm.amount == Decimal(string: "1234.5"))
-        #expect(vm.formattedAmount == "1 234,5")
+        #expect(vm.formattedAmount.normalizedSpaces == "1 234,5")
     }
 
     // MARK: дефолты
@@ -195,7 +195,7 @@ struct AddEntryViewModelTests {
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [c1, c2]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.selectedCategory?.id == c1.id)
@@ -207,7 +207,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [a1, a2]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.onTypeChanged()
@@ -222,7 +222,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.shouldThrow = true
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.errorMessage != nil)
@@ -242,7 +242,7 @@ struct AddEntryViewModelTests {
         try? await categoryRepo.archive(hidden.id)
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo)
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.selectedCategory?.id == hidden.id)
@@ -262,7 +262,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [hidden]
         try? await categoryRepo.archive(hidden.id)
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         await vm.load()
         #expect(vm.categories.count == 1)
@@ -278,7 +278,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [hidden, visible]
         try? await categoryRepo.archive(hidden.id)
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         #expect(vm.filteredCategories.map(\.id) == [visible.id])
         #expect(vm.selectedCategory?.id == visible.id)
@@ -292,7 +292,7 @@ struct AddEntryViewModelTests {
         accountRepo.accounts = [from, to]
         try? await accountRepo.archive(to.id)
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), locale: TestLocale.ru)
         await vm.load()
         #expect(vm.selectedAccount?.id == from.id)
         #expect(vm.selectedToAccount?.id == to.id)

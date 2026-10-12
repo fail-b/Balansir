@@ -9,15 +9,15 @@ struct OnboardingIntroStep: View {
             Spacer()
             demoCard
             Spacer()
-            Text("Balansir")
+            Text(verbatim: "Balansir")
                 .font(Theme.Font.onboardingBrand)
                 .foregroundStyle(Theme.Colors.ink)
-            Text("Расходы по всем счетам в одном месте. Новая операция — сумма, категория и «Сохранить».")
+            Text("All your cards and cash in one place. Logging an expense takes seconds.")
                 .font(Theme.Font.body)
                 .foregroundStyle(Theme.Colors.ink2)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, Theme.Spacing.m)
-            OnboardingPrimaryButton(title: "Начать") { viewModel.start() }
+            OnboardingPrimaryButton(title: String(localized: "Get Started")) { viewModel.start() }
                 .padding(.top, Theme.Spacing.xxl)
         }
         .padding(.horizontal, Theme.Spacing.l)
@@ -38,7 +38,7 @@ struct OnboardingIntroStep: View {
                         .foregroundStyle(Theme.Colors.ink)
                 }
                 Spacer()
-                Text("+\(MoneyFormatter.format(viewModel.demoIncome))")
+                Text(verbatim: "+\(MoneyFormatter.format(viewModel.demoIncome))")
                     .font(Theme.Font.bodyAmount)
                     .foregroundStyle(Theme.Colors.income)
             }

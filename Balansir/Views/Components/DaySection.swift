@@ -18,7 +18,7 @@ struct DaySection: View {
                     .foregroundStyle(Theme.Colors.ink)
                 Spacer()
                 if group.dayExpense > 0 {
-                    Text("\u{2212}\(MoneyFormatter.format(group.dayExpense))")
+                    Text(verbatim: "\u{2212}\(MoneyFormatter.format(group.dayExpense))")
                         .font(Theme.Font.sectionTitle)
                         .foregroundStyle(Theme.Colors.ink2)
                 }
@@ -47,11 +47,9 @@ struct DaySection: View {
 
     private func dayLabel(for date: Date) -> String {
         let cal = Calendar.current
-        if cal.isDateInToday(date) { return "Сегодня" }
-        if cal.isDateInYesterday(date) { return "Вчера" }
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ru_RU")
-        f.dateFormat = "d MMMM"
-        return f.string(from: date)
+        if cal.isDateInToday(date) { return String(localized: "Today") }
+        if cal.isDateInYesterday(date) { return String(localized: "Yesterday") }
+        // «12 октября», «October 12» — порядок и падеж из локали.
+        return date.formatted(.dateTime.day().month(.wide))
     }
 }

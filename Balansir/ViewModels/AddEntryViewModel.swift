@@ -23,7 +23,12 @@ final class AddEntryViewModel: Identifiable {
     private let categoryRepo: any CategoryRepository
     private let entryRepo: any EntryRepository
 
-    init(entry: EntryModel? = nil, accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository) {
+    /// Локаль разделителей в поле суммы и сумм в подписях счетов (DI: в тестах — явная).
+    private let locale: Locale
+
+    init(entry: EntryModel? = nil, accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository,
+         locale: Locale = .current) {
+        self.locale = locale
         self.editingEntry = entry
         self.accountRepo = accountRepo
         self.categoryRepo = categoryRepo
@@ -71,7 +76,7 @@ final class AddEntryViewModel: Identifiable {
 
     /// Подпись строки счёта: «Тинькофф · 154 320 ₽».
     func subtitle(for account: AccountModel) -> String {
-        "\(account.name) · \(MoneyFormatter.format(balance(for: account), currency: account.currency))"
+        "\(account.name) · \(MoneyFormatter.format(balance(for: account), currency: account.currency, locale: locale))"
     }
 
     func load() async {
@@ -143,12 +148,12 @@ final class AddEntryViewModel: Identifiable {
     }
 
     /// Сумма для показа: «1 234,5».
-    var formattedAmount: String { amountInput.formatted }
+    var formattedAmount: String { amountInput.formatted(locale: locale) }
 
     func save() async {
         let now = Date()
         guard !isInFuture(date, now: now) else {
-            errorMessage = "Дата операции не может быть позже сегодняшнего дня."
+            errorMessage = String(localized: "The transaction date can’t be later than today.")
             return
         }
         let entry = EntryModel(

@@ -14,9 +14,9 @@ enum AccountKind: CaseIterable, Hashable {
 
     var title: String {
         switch self {
-        case .card: return "Карта"
-        case .cash: return "Наличные"
-        case .deposit: return "Вклад"
+        case .card: return String(localized: "Card")
+        case .cash: return String(localized: "Cash")
+        case .deposit: return String(localized: "Deposit")
         }
     }
 
@@ -30,9 +30,9 @@ enum AccountKind: CaseIterable, Hashable {
 
     var namePlaceholder: String {
         switch self {
-        case .card: return "Например, Зарплатная карта"
-        case .cash: return "Например, Кошелёк"
-        case .deposit: return "Например, Накопления"
+        case .card: return String(localized: "E.g., Salary card")
+        case .cash: return String(localized: "E.g., Wallet")
+        case .deposit: return String(localized: "E.g., Savings")
         }
     }
 }
@@ -50,7 +50,11 @@ final class AccountFormViewModel: Identifiable {
     private let editingAccount: AccountModel?
     private let accountRepo: any AccountRepository
 
-    init(account: AccountModel? = nil, accountRepo: any AccountRepository) {
+    /// Локаль разделителей в поле «Баланс» (DI: в тестах — явная).
+    private let locale: Locale
+
+    init(account: AccountModel? = nil, accountRepo: any AccountRepository, locale: Locale = .current) {
+        self.locale = locale
         self.editingAccount = account
         self.accountRepo = accountRepo
         if let account {
@@ -62,8 +66,8 @@ final class AccountFormViewModel: Identifiable {
     }
 
     var isEditing: Bool { editingAccount != nil }
-    var title: String { isEditing ? "Изменить счёт" : "Новый счёт" }
-    var actionTitle: String { isEditing ? "Сохранить" : "Добавить" }
+    var title: String { isEditing ? String(localized: "Edit Account") : String(localized: "New Account") }
+    var actionTitle: String { isEditing ? String(localized: "Save") : String(localized: "Add") }
     var namePlaceholder: String { selectedKind.namePlaceholder }
     var canSave: Bool { !trimmedName.isEmpty }
 
@@ -81,7 +85,7 @@ final class AccountFormViewModel: Identifiable {
     // MARK: - Баланс
 
     var initialBalance: Decimal { balanceInput.value }
-    var formattedBalance: String { balanceInput.formatted }
+    var formattedBalance: String { balanceInput.formatted(locale: locale) }
     var isBalanceEmpty: Bool { balanceInput.isEmpty }
 
     func press(_ key: NumpadKey) {

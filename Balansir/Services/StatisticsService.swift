@@ -15,20 +15,26 @@ enum StatisticsService {
         calendar.dateInterval(of: .month, for: date)!
     }
 
-    /// Название месяца с заглавной буквы в именительном падеже: «Октябрь».
-    static func monthName(for date: Date, calendar: Calendar, locale: Locale = Locale(identifier: "ru_RU")) -> String {
+    /// Название месяца в именительном падеже, как его даёт локаль: «октябрь», «October», «octubre».
+    /// Для вставки внутрь фразы («Расходы за октябрь»): регистр не трогаем — у ru/es/fr месяц строчный, у en/de — заглавный.
+    static func monthNameInPhrase(for date: Date, calendar: Calendar, locale: Locale) -> String {
         let f = DateFormatter()
         f.calendar = calendar
         f.timeZone = calendar.timeZone
         f.locale = locale
         f.dateFormat = "LLLL"
-        let s = f.string(from: date)
-        return s.prefix(1).uppercased() + s.dropFirst()
+        return f.string(from: date)
+    }
+
+    /// Название месяца с заглавной буквы в именительном падеже: «Октябрь» — для заголовков.
+    static func monthName(for date: Date, calendar: Calendar, locale: Locale) -> String {
+        let s = monthNameInPhrase(for: date, calendar: calendar, locale: locale)
+        return s.prefix(1).uppercased(with: locale) + s.dropFirst()
     }
 
     /// Подпись месяца для выбора в шапке Главной: месяцы года `now` — «Октябрь»,
     /// других лет — с годом: «Декабрь 2025».
-    static func monthTitle(for date: Date, now: Date, calendar: Calendar, locale: Locale = Locale(identifier: "ru_RU")) -> String {
+    static func monthTitle(for date: Date, now: Date, calendar: Calendar, locale: Locale) -> String {
         let name = monthName(for: date, calendar: calendar, locale: locale)
         let year = calendar.component(.year, from: date)
         guard year != calendar.component(.year, from: now) else { return name }

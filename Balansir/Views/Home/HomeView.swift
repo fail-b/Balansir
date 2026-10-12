@@ -68,7 +68,7 @@ struct HomeView: View {
         }
         .overlay(alignment: .bottom) { undoToast }
         .animation(.snappy, value: viewModel.recentlyDeleted?.id)
-        .alert("Ошибка", isPresented: Binding(
+        .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
@@ -84,7 +84,7 @@ struct HomeView: View {
     @ViewBuilder
     private var undoToast: some View {
         if let deleted = viewModel.recentlyDeleted {
-            UndoToast(title: "Операция удалена") {
+            UndoToast(title: String(localized: "Transaction deleted")) {
                 Task { await viewModel.undoDelete() }
             }
             .padding(.horizontal, Theme.Spacing.l)
@@ -268,7 +268,7 @@ struct HomeView: View {
                         Text(viewModel.heroIncomeTitle)
                             .font(Theme.Font.caption)
                             .foregroundStyle(Theme.Colors.ink2)
-                        Text("+\(MoneyFormatter.format(viewModel.heroIncome))")
+                        Text(verbatim: "+\(MoneyFormatter.format(viewModel.heroIncome))")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(Theme.Colors.income)
                     }
@@ -283,7 +283,7 @@ struct HomeView: View {
                                 Circle()
                                     .fill(Color(hex: segment.colorHex) ?? Theme.Colors.fallback)
                                     .frame(width: 7, height: 7)
-                                Text("\(segment.name) \(segment.percent)%")
+                                Text(verbatim: "\(segment.name) \(segment.percent.formatted(.percent))")
                                     .font(Theme.Font.time)
                                     .foregroundStyle(Theme.Colors.ink2)
                             }
@@ -324,7 +324,7 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Theme.Spacing.s) {
                     AccountChip(
-                        title: "Все",
+                        title: String(localized: "All"),
                         colorHex: nil,
                         balance: viewModel.totalBalance,
                         isActive: viewModel.selectedAccountId == nil
@@ -375,10 +375,10 @@ struct HomeView: View {
         Group {
             if viewModel.isSearchActive && !searchQueryEmpty {
                 VStack(spacing: Theme.Spacing.xs) {
-                    Text("Ничего не найдено")
+                    Text("Nothing found")
                         .font(Theme.Font.sheetTitle)
                         .foregroundStyle(Theme.Colors.ink)
-                    Text("Попробуйте другое слово")
+                    Text("Try another word")
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Colors.ink2)
                 }

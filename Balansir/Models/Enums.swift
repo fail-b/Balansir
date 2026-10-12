@@ -7,9 +7,10 @@ enum EntryType: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .expense: return "Расход"
-        case .income: return "Доход"
-        case .transfer: return "Перевод"
+        case .expense: return String(localized: "Expense")
+        // Ключ отдельный: «Income» без уточнения — это «Доходы» (множественное), а тут «Доход».
+        case .income: return String(localized: "entry.type.income", defaultValue: "Income")
+        case .transfer: return String(localized: "Transfer")
         }
     }
 }
@@ -22,10 +23,10 @@ enum AccountType: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .debit: return "Дебетовая"
-        case .credit: return "Кредитная"
-        case .cash: return "Наличные"
-        case .savings: return "Накопительная"
+        case .debit: return String(localized: "Debit")
+        case .credit: return String(localized: "Credit")
+        case .cash: return String(localized: "Cash")
+        case .savings: return String(localized: "Savings")
         }
     }
 
@@ -45,8 +46,8 @@ enum CategoryType: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .expense: return "Расходы"
-        case .income: return "Доходы"
+        case .expense: return String(localized: "Expenses")
+        case .income: return String(localized: "Income")
         }
     }
 }

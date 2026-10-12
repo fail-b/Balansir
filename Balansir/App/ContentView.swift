@@ -41,13 +41,13 @@ struct ContentView: View {
                     HomeView(viewModel: homeVM, selectedTab: $selectedTab, isScrolled: $isScrolled)
                 }
             } label: {
-                tabLabel("Главная", icon: AppIcon.tabHome)
+                tabLabel(String(localized: "Home"), icon: AppIcon.tabHome)
             }
 
             Tab(value: AppTab.statistics) {
                 StatisticsView(viewModel: statisticsVM, isScrolled: $isScrolled)
             } label: {
-                tabLabel("Статистика", icon: AppIcon.tabStatistics)
+                tabLabel(String(localized: "Statistics"), icon: AppIcon.tabStatistics)
             }
 
             Tab(value: AppTab.accounts) {
@@ -57,7 +57,7 @@ struct ContentView: View {
                     selectedTab = .home
                 }
             } label: {
-                tabLabel("Счета", icon: AppIcon.tabAccounts)
+                tabLabel(String(localized: "Accounts"), icon: AppIcon.tabAccounts)
             }
 
             // role: .search — система рисует вкладку отдельным круглым стеклом справа,
@@ -66,7 +66,7 @@ struct ContentView: View {
                 Color.clear
             } label: {
                 // Круг остаётся системным стеклом, плюс — акцентным (решение владельца 2026-10-11).
-                tabLabel("Добавить", icon: AppIcon.add, tint: Theme.Colors.accent)
+                tabLabel(String(localized: "Add"), icon: AppIcon.add, tint: Theme.Colors.accent)
             }
         }
         .tint(Theme.Colors.accent)

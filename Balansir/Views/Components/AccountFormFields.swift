@@ -89,7 +89,7 @@ struct AccountFormFields: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Цвет \(index + 1)")
+                .accessibilityLabel("Color \(index + 1)")
                 .accessibilityAddTraits(viewModel.isSelected(hex) ? .isSelected : [])
             }
         }
@@ -99,7 +99,7 @@ struct AccountFormFields: View {
     private var balanceField: some View {
         Button(action: onBalanceTap) {
             HStack(spacing: Theme.Spacing.s) {
-                Text("Баланс")
+                Text("Balance")
                     .font(Theme.Font.body)
                     .foregroundStyle(Theme.Colors.ink2)
                 Spacer(minLength: Theme.Spacing.s)
@@ -124,6 +124,6 @@ struct AccountFormFields: View {
             .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.balanceField))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Баланс \(viewModel.formattedBalance) рублей")
+        .accessibilityLabel("Balance \(viewModel.formattedBalance) \(MoneyFormatter.symbol(for: "RUB"))")
     }
 }

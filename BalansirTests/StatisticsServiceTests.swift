@@ -36,8 +36,17 @@ struct StatisticsServiceTests {
 
     @Test("Название месяца — с заглавной, в именительном падеже")
     func monthName() {
-        #expect(StatisticsService.monthName(for: StatsFixture.today, calendar: cal) == "Октябрь")
-        #expect(StatisticsService.monthName(for: StatsFixture.date(5, 3), calendar: cal) == "Май")
+        #expect(StatisticsService.monthName(for: StatsFixture.today, calendar: cal, locale: TestLocale.ru) == "Октябрь")
+        #expect(StatisticsService.monthName(for: StatsFixture.date(5, 3), calendar: cal, locale: TestLocale.ru) == "Май")
+        #expect(StatisticsService.monthName(for: StatsFixture.today, calendar: cal, locale: TestLocale.en) == "October")
+        #expect(StatisticsService.monthName(for: StatsFixture.date(3, 3), calendar: cal, locale: TestLocale.de) == "März")
+    }
+
+    @Test("Месяц внутри фразы — регистр как в локали")
+    func monthNameInPhrase() {
+        #expect(StatisticsService.monthNameInPhrase(for: StatsFixture.today, calendar: cal, locale: TestLocale.ru) == "октябрь")
+        #expect(StatisticsService.monthNameInPhrase(for: StatsFixture.today, calendar: cal, locale: TestLocale.en) == "October")
+        #expect(StatisticsService.monthNameInPhrase(for: StatsFixture.today, calendar: cal, locale: TestLocale.de) == "Oktober")
     }
 
     @Test func месяц_от_первого_числа_до_первого_числа_следующего() {
