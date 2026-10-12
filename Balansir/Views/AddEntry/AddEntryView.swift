@@ -56,11 +56,7 @@ struct AddEntryView: View {
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
             if !isNoteFocused {
-                NumpadView(
-                    onDigit: { viewModel.inputDigit($0) },
-                    onSeparator: { viewModel.inputSeparator() },
-                    onBackspace: { viewModel.backspace() }
-                )
+                NumpadView(layout: .amount) { viewModel.press($0) }
                 .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
             }
             saveButton
@@ -185,7 +181,7 @@ struct AddEntryView: View {
             Text(viewModel.formattedAmount)
                 .font(Theme.Font.amountInput)
                 .tracking(Theme.Font.Tracking.amountInput)
-                .foregroundStyle(viewModel.amountString == "0" ? Theme.Colors.ink2 : Theme.Colors.ink)
+                .foregroundStyle(viewModel.amountInput.isEmpty ? Theme.Colors.ink2 : Theme.Colors.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             Text(viewModel.currencySymbol)

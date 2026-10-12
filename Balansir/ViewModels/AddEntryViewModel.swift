@@ -8,7 +8,8 @@ final class AddEntryViewModel: Identifiable {
     private(set) var balances: [UUID: Decimal] = [:]
 
     var selectedType = EntryType.expense
-    var amountString = "0"
+    /// Ввод суммы с цифровой клавиатуры (правила — в `AmountInput`).
+    private(set) var amountInput = AmountInput()
     var selectedAccount: AccountModel?
     var selectedToAccount: AccountModel?
     var selectedCategory: CategoryModel?
@@ -30,7 +31,13 @@ final class AddEntryViewModel: Identifiable {
     }
 
     var isEditing: Bool { editingEntry != nil }
-    var amount: Decimal { Decimal(string: amountString) ?? 0 }
+    var amount: Decimal { amountInput.value }
+
+    /// Сумма строкой вида «1234.5» — для тестов и предзаполнения.
+    var amountString: String {
+        get { amountInput.text }
+        set { amountInput.text = newValue }
+    }
 
     /// Валюта операции = валюта выбранного счёта (символ «₽»/«$»/… зависит от неё).
     var currency: String { selectedAccount?.currency ?? "RUB" }
@@ -71,7 +78,7 @@ final class AddEntryViewModel: Identifiable {
                 hasLoaded = true
                 if let entry = editingEntry {
                     selectedType = entry.type
-                    amountString = "\(entry.amount)"
+                    amountInput = AmountInput(decimal: entry.amount)
                     date = entry.date
                     note = entry.note ?? ""
                     switch entry.type {
@@ -108,56 +115,14 @@ final class AddEntryViewModel: Identifiable {
         }
     }
 
-    // MARK: - Ввод суммы (правила §4.7)
-    // amountString хранит разделитель как «.» (для Decimal); «,» — только на экране.
+    // MARK: - Ввод суммы (правила §4.7 — в AmountInput)
 
-    func inputDigit(_ digit: String) {
-        if let dotIndex = amountString.firstIndex(of: ".") {
-            // дробная часть: не больше 2 знаков
-            let fraction = amountString[amountString.index(after: dotIndex)...]
-            if fraction.count >= 2 { return }
-            amountString += digit
-        } else if amountString == "0" {
-            amountString = digit            // цифра при «0» заменяет его
-        } else {
-            if amountString.count >= 9 { return }   // не больше 9 цифр целой части
-            amountString += digit
-        }
+    func press(_ key: NumpadKey) {
+        amountInput.apply(key)
     }
 
-    func inputSeparator() {
-        if !amountString.contains(".") { amountString += "." }   // «,» на пустой сумме → «0,»
-    }
-
-    func backspace() {
-        if amountString.count > 1 {
-            amountString.removeLast()
-        } else {
-            amountString = "0"
-        }
-    }
-
-    /// Сумма для показа: целая часть группируется пробелами, дробная — через «,».
-    var formattedAmount: String {
-        let parts = amountString.split(separator: ".", maxSplits: 1, omittingEmptySubsequences: false)
-        let intDigits = String(parts[0])
-        let grouped = groupThousands(intDigits)
-        if amountString.contains(".") {
-            let fraction = parts.count > 1 ? String(parts[1]) : ""
-            return "\(grouped),\(fraction)"
-        }
-        return grouped
-    }
-
-    private func groupThousands(_ digits: String) -> String {
-        guard let number = Int(digits) else { return digits }
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.groupingSeparator = " "
-        f.minimumFractionDigits = 0
-        f.maximumFractionDigits = 0
-        return f.string(from: NSNumber(value: number)) ?? digits
-    }
+    /// Сумма для показа: «1 234,5».
+    var formattedAmount: String { amountInput.formatted }
 
     func save() async {
         let now = Date()

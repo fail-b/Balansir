@@ -91,6 +91,11 @@ enum Theme {
         static let separatorInset: CGFloat = 36
     }
 
+    /// Самописная цифровая клавиатура `NumpadView` (§4.6, §4.7).
+    enum Numpad {
+        static let keyHeight: CGFloat = 52
+    }
+
     /// Жест «потянуть вниз» → поиск на Главной (§4.1.4).
     enum Pull {
         /// Оттяжка ленты вниз, при которой прогресс жеста достигает 1 (порог активации).
@@ -163,6 +168,9 @@ enum Theme {
         /// Подпись версии внизу Настроек (§4.8).
         static let appVersion = SwiftUI.Font.system(size: 12)
         static let searchField = SwiftUI.Font.system(size: 17)
+        /// Клавиши `NumpadView`: цифры/знаки и иконка ⌫.
+        static let numpadKey = SwiftUI.Font.system(size: 26, weight: .medium)
+        static let numpadIcon = SwiftUI.Font.system(size: 22)
         static let tabLabel = SwiftUI.Font.system(size: 10, weight: .semibold)
         /// Сводка у таб-бара (§3): подпись над суммой, основная сумма слева, вторая справа.
         static let summaryLabel = SwiftUI.Font.system(size: 13)

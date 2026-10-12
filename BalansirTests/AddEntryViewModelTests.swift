@@ -173,60 +173,15 @@ struct AddEntryViewModelTests {
         #expect(vm.selectedCategory?.id == category.id)
     }
 
-    // MARK: правила ввода суммы (§4.7)
+    // MARK: ввод суммы (правила — в AmountInputTests)
 
-    @Test func ввод_цифры_заменяет_ведущий_ноль() async {
+    @Test func press_передаёт_клавиши_в_ввод_суммы() async {
         let vm = makeVM()
         await vm.load()
-        vm.inputDigit("5")
-        #expect(vm.amountString == "5")
-    }
-
-    @Test func не_больше_9_цифр_целой_части() async {
-        let vm = makeVM()
-        await vm.load()
-        for d in "123456789" { vm.inputDigit(String(d)) }
-        vm.inputDigit("0")   // десятая — игнорируется
-        #expect(vm.amountString == "123456789")
-    }
-
-    @Test func не_больше_2_знаков_после_запятой() async {
-        let vm = makeVM()
-        await vm.load()
-        vm.inputDigit("5")
-        vm.inputSeparator()
-        vm.inputDigit("1")
-        vm.inputDigit("2")
-        vm.inputDigit("3")   // третий — игнорируется
-        #expect(vm.amountString == "5.12")
-    }
-
-    @Test func запятая_на_нулевой_сумме_даёт_ноль_запятую() async {
-        let vm = makeVM()
-        await vm.load()
-        vm.inputSeparator()
-        #expect(vm.amountString == "0.")
-        #expect(vm.formattedAmount == "0,")
-    }
-
-    @Test func backspace_удаляет_последний_символ_и_не_уходит_ниже_нуля() async {
-        let vm = makeVM()
-        await vm.load()
-        vm.inputDigit("1")
-        vm.inputDigit("2")
-        vm.backspace()
-        #expect(vm.amountString == "1")
-        vm.backspace()
-        #expect(vm.amountString == "0")
-        vm.backspace()
-        #expect(vm.amountString == "0")
-    }
-
-    @Test func formattedAmount_группирует_тысячи_пробелами() async {
-        let vm = makeVM()
-        await vm.load()
-        for d in "1234567" { vm.inputDigit(String(d)) }
-        #expect(vm.formattedAmount == "1 234 567")
+        for key: NumpadKey in [.digit(1), .digit(2), .digit(3), .digit(4), .separator, .digit(5)] { vm.press(key) }
+        vm.press(.minus)   // в операции минуса нет
+        #expect(vm.amount == Decimal(string: "1234.5"))
+        #expect(vm.formattedAmount == "1 234,5")
     }
 
     // MARK: дефолты
