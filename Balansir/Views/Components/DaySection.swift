@@ -7,10 +7,10 @@ struct DaySection: View {
     /// Открытая свайпом строка ленты — одна на всю ленту.
     @Binding var openRowId: UUID?
     let onTap: (EntryModel) -> Void
-    /// Тап по чипу тега в строке (поиск по тегу). nil — чипы не нажимаются.
-    var onTagTap: ((TagModel) -> Void)? = nil
     /// Удаление; `false` — не удалось, строка возвращается на место.
     let onDelete: (EntryModel) async -> Bool
+    /// Тап по чипу тега в строке (поиск по тегу). nil — чипы не нажимаются.
+    var onTagTap: ((TagModel) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.s) {
