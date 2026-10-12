@@ -108,7 +108,9 @@ final class AccountFormViewModel: Identifiable {
 
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    func save() async {
+    /// Сохраняет счёт и возвращает его (онбордингу нужен id для ✕). При ошибке — `nil` и `errorMessage`.
+    @discardableResult
+    func save() async -> AccountModel? {
         do {
             let sortOrder: Int32
             if let editingAccount {
@@ -132,6 +134,10 @@ final class AccountFormViewModel: Identifiable {
                 updatedAt: Date()
             )
             try await accountRepo.save(model)
-        } catch { errorMessage = error.localizedDescription }
+            return model
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
     }
 }

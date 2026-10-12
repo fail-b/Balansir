@@ -265,4 +265,8 @@ final class HomeViewModel {
     func makeAccountFormViewModel(for account: AccountModel? = nil) -> AccountFormViewModel {
         AccountFormViewModel(account: account, accountRepo: accountRepo)
     }
+
+    func makeOnboardingViewModel() -> OnboardingViewModel {
+        OnboardingViewModel(accountRepo: accountRepo, entryRepo: entryRepo)
+    }
 }

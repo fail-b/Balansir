@@ -8,6 +8,8 @@ enum AppSettingsKey {
     static let statsWeekStart = "statsWeekStart"
     static let eveningReminder = "eveningReminder"
     static let faceID = "faceID"
+    /// Онбординг (§4.9) пройден или пропущен. `false` — показать при запуске (или сразу — из Настроек).
+    static let hasSeenOnboarding = "hasSeenOnboarding"
 }
 
 /// Тема приложения: применяется сразу через `.preferredColorScheme` в `BalansirApp`.

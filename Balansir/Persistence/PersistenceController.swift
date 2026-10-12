@@ -31,7 +31,8 @@ struct PersistenceController {
     }
 
     private func seedDefaultsIfNeeded(in context: NSManagedObjectContext) {
-        let request = Account.fetchRequest()
+        // Проверяем категории, а не счета: счетов до онбординга нет, иначе категории сеялись бы при каждом запуске.
+        let request = Category.fetchRequest()
         guard (try? context.count(for: request)) == 0 else { return }
         SeedData.populate(in: context)
     }

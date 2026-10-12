@@ -117,6 +117,20 @@ enum Theme {
         static let segmentShadowY: CGFloat = 1
     }
 
+    /// Онбординг (§4.9).
+    enum Onboarding {
+        /// Высота сегментов прогресса.
+        static let progressHeight: CGFloat = 4
+        /// Пример hero-карточки на шаге 1: отступы, полоса категорий, тень.
+        static let demoCardHorizontalPadding: CGFloat = 20
+        static let demoCardVerticalPadding: CGFloat = 18
+        static let demoBarHeight: CGFloat = 10
+        static let demoBarRadius: CGFloat = 5
+        static let demoBarGap: CGFloat = 2
+        static let demoShadowRadius: CGFloat = 24
+        static let demoShadowY: CGFloat = 8
+    }
+
     /// Самописная цифровая клавиатура `NumpadView` (§4.6, §4.7).
     enum Numpad {
         static let keyHeight: CGFloat = 52
@@ -193,6 +207,8 @@ enum Theme {
         /// Плашка «Удалено · Отменить».
         static let toast = SwiftUI.Font.system(size: 15, weight: .medium)
         static let toastAction = SwiftUI.Font.system(size: 15, weight: .semibold)
+        /// Название приложения на первом шаге онбординга (§4.9).
+        static let onboardingBrand = SwiftUI.Font.system(size: 40, weight: .bold)
         /// Подпись версии внизу Настроек (§4.8).
         static let appVersion = SwiftUI.Font.system(size: 12)
         static let searchField = SwiftUI.Font.system(size: 17)

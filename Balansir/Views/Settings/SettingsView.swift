@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Настройки (§4.8): открываются переходом вглубь по шестерёнке с Главной и Счетов.
 /// Данных из репозиториев экран не читает, поэтому без ViewModel: всё хранится в `@AppStorage`.
-/// Пока работает только выбор темы, остальное — заглушки.
+/// Пока работают выбор темы и «Показать приветствие», остальное — заглушки.
 struct SettingsView: View {
     @AppStorage(AppSettingsKey.appearance) private var appearance: AppearanceMode = .system
     @AppStorage(AppSettingsKey.statsPeriod) private var statsPeriod: StatsPeriod = .month
@@ -10,6 +10,8 @@ struct SettingsView: View {
     @AppStorage(AppSettingsKey.statsWeekStart) private var weekStart: WeekStart = .monday
     @AppStorage(AppSettingsKey.eveningReminder) private var eveningReminder = false
     @AppStorage(AppSettingsKey.faceID) private var faceID = false
+    /// Сброс флага — `ContentView` сразу показывает онбординг (§4.9).
+    @AppStorage(AppSettingsKey.hasSeenOnboarding) private var hasSeenOnboarding = false
 
     var body: some View {
         List {
@@ -53,7 +55,7 @@ struct SettingsView: View {
             Section {
                 stubAction("Экспорт в CSV", icon: AppIcon.export)
                 stubAction("Импорт из CoinKeeper", icon: AppIcon.importData)
-                stubAction("Показать приветствие", icon: nil)
+                Button("Показать приветствие") { hasSeenOnboarding = false }
             } header: { sectionHeader("Данные") }
 
             Section {

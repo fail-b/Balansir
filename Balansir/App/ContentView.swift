@@ -16,6 +16,9 @@ struct ContentView: View {
     @State private var addEntryVM: AddEntryViewModel?
     // Прокручен ли текущий экран ниже порога — тогда показываем сводку рядом со свёрнутым баром.
     @State private var isScrolled = false
+    /// Онбординг (§4.9): `false` — показать (первый запуск или «Показать приветствие» в Настройках).
+    @AppStorage(AppSettingsKey.hasSeenOnboarding) private var hasSeenOnboarding = false
+    @State private var onboardingVM: OnboardingViewModel?
 
     init(accountRepo: any AccountRepository,
          categoryRepo: any CategoryRepository,
@@ -71,6 +74,17 @@ struct ContentView: View {
         .sheet(item: $addEntryVM, onDismiss: reloadAll) { vm in
             AddEntryView(viewModel: vm)
         }
+        .fullScreenCover(item: $onboardingVM, onDismiss: {
+            hasSeenOnboarding = true
+            reloadAll()
+        }) { vm in
+            OnboardingView(viewModel: vm)
+        }
+        .task { await showOnboardingIfNeeded() }
+        // «Показать приветствие» в Настройках сбрасывает флаг — показываем сразу, без проверки данных.
+        .onChange(of: hasSeenOnboarding) { _, seen in
+            if !seen, onboardingVM == nil { onboardingVM = homeVM.makeOnboardingViewModel() }
+        }
     }
 
     /// Перехватывает тап по «+»: вкладка не переключается, открывается шит.
@@ -97,6 +111,18 @@ struct ContentView: View {
             } else {
                 AppIcon.image(named: icon)
             }
+        }
+    }
+
+    /// Первый запуск: показать онбординг, если у пользователя ещё нет своих данных,
+    /// иначе (обновление с уже заполненной базой) — просто отметить его пройденным.
+    private func showOnboardingIfNeeded() async {
+        guard !hasSeenOnboarding, onboardingVM == nil else { return }
+        let vm = homeVM.makeOnboardingViewModel()
+        if await vm.needsOnboarding() {
+            onboardingVM = vm
+        } else {
+            hasSeenOnboarding = true
         }
     }
 

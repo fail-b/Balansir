@@ -1,33 +1,10 @@
 import CoreData
 
 enum SeedData {
+    /// Только категории. Счета пользователь заводит сам в онбординге (§4.9) — демо-счетов нет.
     static func populate(in context: NSManagedObjectContext) {
-        addAccounts(to: context)
         addCategories(to: context)
         try? context.save()
-    }
-
-    private static func addAccounts(to context: NSManagedObjectContext) {
-        let data: [(String, String, String, String)] = [
-            ("Тинькофф", "creditcard", "#FFDD00", AccountType.debit.rawValue),
-            ("Альфа", "creditcard", "#EF3124", AccountType.debit.rawValue),
-            ("Наличка", "banknote", "#4CAF50", AccountType.cash.rawValue),
-            ("ВТБ", "creditcard", "#009FDF", AccountType.debit.rawValue),
-        ]
-        for (i, (name, icon, color, type)) in data.enumerated() {
-            let a = Account(context: context)
-            a.id = UUID()
-            a.name = name
-            a.iconName = icon
-            a.colorHex = color
-            a.accountType = type
-            a.initialBalance = 0
-            a.currency = "RUB"
-            a.sortOrder = Int32(i)
-            a.createdAt = Date()
-            a.updatedAt = Date()
-            a.isArchived = false
-        }
     }
 
     private static func addCategories(to context: NSManagedObjectContext) {
