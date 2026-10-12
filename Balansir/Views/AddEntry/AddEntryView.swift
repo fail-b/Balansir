@@ -316,8 +316,8 @@ struct AddEntryView: View {
                 .font(Theme.Font.tagCarousel)
                 .foregroundStyle(isSelected ? Theme.Colors.onColor : Theme.Colors.ink)
                 .lineLimit(1)
-                .padding(.horizontal, Theme.TagChip.carouselHorizontalPadding)
-                .frame(height: Theme.TagChip.carouselHeight)
+                .padding(.horizontal, Theme.TagSize.carouselHorizontalPadding)
+                .frame(height: Theme.TagSize.carouselHeight)
                 .background(isSelected ? Theme.Colors.accent : Theme.Colors.fill, in: Capsule())
         }
         .buttonStyle(.plain)
@@ -345,10 +345,10 @@ struct AddEntryView: View {
                 .focused($focusedField, equals: .newTag)
                 .submitLabel(.done)
                 .onSubmit { Task { await viewModel.commitNewTag() } }
-                .padding(.horizontal, Theme.TagChip.carouselHorizontalPadding)
-                .frame(width: Theme.TagChip.newTagFieldWidth, height: Theme.TagChip.carouselHeight)
+                .padding(.horizontal, Theme.TagSize.carouselHorizontalPadding)
+                .frame(width: Theme.TagSize.newTagFieldWidth, height: Theme.TagSize.carouselHeight)
                 .background(Theme.Colors.fill, in: Capsule())
-                .overlay(Capsule().strokeBorder(Theme.Colors.accent, lineWidth: Theme.TagChip.newTagFieldBorder))
+                .overlay(Capsule().strokeBorder(Theme.Colors.accent, lineWidth: Theme.TagSize.newTagFieldBorder))
                 .onAppear { focusedField = .newTag }
         } else {
             Button {
@@ -358,7 +358,7 @@ struct AddEntryView: View {
                 AppIcon.image(named: AppIcon.add)
                     .font(Theme.Font.tagCarousel)
                     .foregroundStyle(Theme.Colors.ink2)
-                    .frame(width: Theme.TagChip.carouselHeight, height: Theme.TagChip.carouselHeight)
+                    .frame(width: Theme.TagSize.carouselHeight, height: Theme.TagSize.carouselHeight)
                     .background(Theme.Colors.fill, in: Capsule())
             }
             .buttonStyle(.plain)

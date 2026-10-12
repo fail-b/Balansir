@@ -28,14 +28,15 @@ extension EntryModel {
         }
     }
 
-    /// Заметка для строки ленты: «#заметка» в одну строку; nil, если заметки нет (§4.2).
+    /// Заметка для строки ленты: в кавычках “…”, в одну строку; nil, если заметки нет (§4.2).
+    /// «#» не добавляется — так в ленте показываются теги.
     var displayNote: String? {
         let text = (note ?? "")
             .components(separatedBy: .newlines)
             .joined(separator: " ")
             .trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return nil }
-        return text.hasPrefix("#") ? text : "#\(text)"
+        return "\u{201C}\(text)\u{201D}"
     }
 
     // Для переводов возвращает «Откуда → Куда», иначе — имя счёта

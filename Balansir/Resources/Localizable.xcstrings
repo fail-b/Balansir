@@ -841,30 +841,30 @@
         }
       }
     },
-    "Category, account or note" : {
+    "Category, account, tag or note" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kategorie, Konto oder Notiz"
+            "value" : "Kategorie, Konto, Tag oder Notiz"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Categoría, cuenta o nota"
+            "value" : "Categoría, cuenta, etiqueta o nota"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Catégorie, compte ou note"
+            "value" : "Catégorie, compte, étiquette ou note"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Категория, счёт или заметка"
+            "value" : "Категория, счёт, тег или заметка"
           }
         }
       }

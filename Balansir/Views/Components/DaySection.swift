@@ -7,6 +7,8 @@ struct DaySection: View {
     /// Открытая свайпом строка ленты — одна на всю ленту.
     @Binding var openRowId: UUID?
     let onTap: (EntryModel) -> Void
+    /// Тап по чипу тега в строке (поиск по тегу). nil — чипы не нажимаются.
+    var onTagTap: ((TagModel) -> Void)? = nil
     /// Удаление; `false` — не удалось, строка возвращается на место.
     let onDelete: (EntryModel) async -> Bool
 
@@ -34,7 +36,7 @@ struct DaySection: View {
                     SwipeToDeleteRow(
                         id: entry.id,
                         openRowId: $openRowId,
-                        content: { EntryRow(entry: entry, isLast: idx == group.entries.count - 1) },
+                        content: { EntryRow(entry: entry, isLast: idx == group.entries.count - 1, onTagTap: onTagTap) },
                         onTap: { onTap(entry) },
                         onDelete: { await onDelete(entry) }
                     )

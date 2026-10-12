@@ -202,7 +202,8 @@ struct HomeView: View {
                         },
                         onDelete: { entry in
                             await viewModel.delete(entry: entry)
-                        }
+                        },
+                        onTagTap: { tag in searchByTag(tag) }
                     )
                     .padding(.top, Theme.Spacing.xl)
                     .padding(.horizontal, Theme.Spacing.l)
@@ -406,6 +407,15 @@ struct HomeView: View {
             viewModel.isSearchActive = true
         }
         viewModel.shouldFocusSearch = true
+    }
+
+    /// Тап по чипу тега в ленте → поиск по тегу (§4.3): без клавиатуры, лента — к началу результатов.
+    private func searchByTag(_ tag: TagModel) {
+        openSwipeRowId = nil
+        withAnimation(reduceMotion ? nil : Theme.Animation.searchMorph) {
+            viewModel.searchTag(tag)
+            scrollPosition.scrollTo(edge: .top)
+        }
     }
 
     /// Закрытие поиска: тап по пустому месту или свайп вверх (как ✕ в шапке).

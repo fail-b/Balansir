@@ -80,7 +80,7 @@ enum Theme {
         static let categoryLabelGap: CGFloat = 6
     }
     /// Теги (§4.2, §4.7): карусель в шите и чипы в строке ленты.
-    enum TagChip {
+    enum TagSize {
         /// Ячейка карусели в шите.
         static let carouselHeight: CGFloat = 32
         static let carouselHorizontalPadding: CGFloat = 12

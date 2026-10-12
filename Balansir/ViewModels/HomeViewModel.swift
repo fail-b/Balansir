@@ -117,6 +117,15 @@ final class HomeViewModel {
         accountToReveal = nil
     }
 
+    // MARK: - Поиск по тегу (§4.3)
+
+    /// Тап по чипу тега в ленте: открыть поиск с запросом `#Тег` (только по тегам), без клавиатуры.
+    func searchTag(_ tag: TagModel) {
+        searchQuery = "#\(tag.name)"
+        isSearchActive = true
+        shouldFocusSearch = false
+    }
+
     /// Название текущего месяца для шапки Главной и сводки таб-бара: «Октябрь».
     var currentMonthName: String {
         StatisticsService.monthName(for: Date(), calendar: .current, locale: locale)
@@ -192,11 +201,13 @@ final class HomeViewModel {
     var filteredEntries: [EntryModel] {
         let byAccount = allEntries.filter { accountMatches($0) && monthMatches($0) }
         var query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Заметка в ленте показана как «#заметка» — запрос с «#» ищет так же, как без него.
-        if query.hasPrefix("#") { query = String(query.dropFirst()).trimmingCharacters(in: .whitespaces) }
+        // «#тег» — поиск только по тегам (так теги показаны в ленте, §4.3); без «#» — по всем полям.
+        let tagsOnly = query.hasPrefix("#")
+        if tagsOnly { query = String(query.dropFirst()).trimmingCharacters(in: .whitespaces) }
         guard !query.isEmpty else { return byAccount }
 
         let needle = normalize(query)
+        if tagsOnly { return byAccount.filter { tagMatches($0, needle: needle) } }
         let numericNeedle = isNumericQuery(query) ? query.replacingOccurrences(of: " ", with: "") : nil
         return byAccount.filter { entry in
             textMatches(entry, needle: needle)
@@ -236,9 +247,13 @@ final class HomeViewModel {
         return !query.isEmpty && query.allSatisfy { $0.isNumber || $0 == " " || $0 == separator }
     }
 
-    // Поиск по категории, счёту (у перевода — по обоим) и заметке.
+    private func tagMatches(_ entry: EntryModel, needle: String) -> Bool {
+        entry.tags.contains { normalize($0.name).contains(needle) }
+    }
+
+    // Поиск по категории, счёту (у перевода — по обоим), тегам и заметке.
     private func textMatches(_ entry: EntryModel, needle: String) -> Bool {
-        var fields: [String] = []
+        var fields: [String] = entry.tags.map(\.name)
         if let category = entry.category?.name { fields.append(category) }
         if let from = entry.fromAccount?.name { fields.append(from) }
         if let to = entry.toAccount?.name { fields.append(to) }

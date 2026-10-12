@@ -3,6 +3,8 @@ import SwiftUI
 struct EntryRow: View {
     let entry: EntryModel
     var isLast: Bool = false
+    /// Тап по чипу тега (поиск по тегу на Главной). nil — чипы не нажимаются.
+    var onTagTap: ((TagModel) -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -11,24 +13,34 @@ struct EntryRow: View {
                     .frame(width: Theme.Row.iconSize, height: Theme.Row.iconSize)
 
                 VStack(alignment: .leading, spacing: Theme.Row.textSpacing) {
-                    // Название и заметка «#…» в одной строке; не помещается — обрезается заметка.
+                    // Название и чипы тегов; не помещается — ужимаются чипы, а не название.
                     HStack(spacing: Theme.Spacing.xs) {
                         Text(entry.displayTitle)
                             .font(Theme.Font.rowTitle)
                             .foregroundStyle(Theme.Colors.ink)
                             .lineLimit(1)
                             .layoutPriority(1)
+                        ForEach(entry.tags) { tag in
+                            TagChip(name: tag.name, action: onTagTap.map { tap in { tap(tag) } })
+                        }
+                    }
+                    // Счёт · “заметка”; не помещается — обрезается заметка.
+                    HStack(spacing: Theme.Spacing.xs) {
+                        Text(entry.displayAccount)
+                            .font(Theme.Font.caption)
+                            .foregroundStyle(Theme.Colors.ink2)
+                            .lineLimit(1)
+                            .layoutPriority(1)
                         if let note = entry.displayNote {
-                            Text(note)
+                            Text(verbatim: "·")
+                                .font(Theme.Font.caption)
+                                .foregroundStyle(Theme.Colors.ink2)
+                            Text(verbatim: note)
                                 .font(Theme.Font.rowNote)
-                                .foregroundStyle(Theme.Colors.ink3)
+                                .foregroundStyle(Theme.Colors.ink2)
                                 .lineLimit(1)
                         }
                     }
-                    Text(entry.displayAccount)
-                        .font(Theme.Font.caption)
-                        .foregroundStyle(Theme.Colors.ink2)
-                        .lineLimit(1)
                 }
 
                 Spacer()
@@ -41,7 +53,7 @@ struct EntryRow: View {
                         .font(Theme.Font.time)
                         .foregroundStyle(Theme.Colors.ink2)
                 }
-                // Сумма и время не ужимаются длинной заметкой.
+                // Сумма и время не ужимаются тегами и длинной заметкой.
                 .fixedSize(horizontal: true, vertical: false)
             }
             .padding(.horizontal, Theme.Spacing.l)

@@ -374,30 +374,72 @@ struct HomeViewModelTests {
         #expect(vm.recentlyDeleted == nil)
     }
 
-    // MARK: - Заметка «#…» (§4.2)
+    // MARK: - Теги и заметка (§4.2, §4.3)
 
-    @Test func поиск_с_решёткой_находит_по_заметке() async {
-        var entry = EntryModel.makeTest(type: .expense, amount: 100)
-        entry.note = "Кофе с собой"
-        let entryRepo = MockEntryRepository()
-        entryRepo.entries = [entry, .makeTest(type: .expense, amount: 200)]
-        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+    @Test func поиск_без_решётки_находит_по_тегу_и_заметке() async {
+        let coffee = TagModel.makeTest(name: "Кофе")
+        let byTag = EntryModel.makeTest(type: .expense, amount: 100, tags: [coffee])
+        var byNote = EntryModel.makeTest(type: .expense, amount: 150)
+        byNote.note = "кофе с собой"
+        let other = EntryModel.makeTest(type: .expense, amount: 200)
+        let vm = makeSearchVM(entries: [byTag, byNote, other])
         await vm.load()
 
-        vm.searchQuery = "#кофе"
+        vm.searchQuery = "кофе"
+
+        #expect(Set(vm.filteredEntries.map(\.id)) == [byTag.id, byNote.id])
+    }
+
+    @Test func поиск_с_решёткой_только_по_тегам() async {
+        let coffee = TagModel.makeTest(name: "Кофе")
+        let byTag = EntryModel.makeTest(type: .expense, amount: 100, tags: [coffee])
+        var byNote = EntryModel.makeTest(type: .expense, amount: 150)
+        byNote.note = "кофе с собой"
+        let category = CategoryModel.makeTest(name: "Кофейни")
+        let byCategory = EntryModel.makeTest(type: .expense, amount: 200, category: category)
+        let vm = makeSearchVM(entries: [byTag, byNote, byCategory])
+        await vm.load()
+
+        vm.searchQuery = "#коф"
+
+        #expect(vm.filteredEntries.map(\.id) == [byTag.id])
+    }
+
+    @Test func поиск_находит_второй_тег_импорта() async {
+        let wash = TagModel.makeTest(name: "Мойка")
+        let karcher = TagModel.makeTest(name: "Каршер")
+        let entry = EntryModel.makeTest(type: .expense, amount: 100, tags: [karcher, wash])
+        let vm = makeSearchVM(entries: [entry, .makeTest(type: .expense, amount: 50)])
+        await vm.load()
+
+        vm.searchQuery = "#мойка"
 
         #expect(vm.filteredEntries.map(\.id) == [entry.id])
     }
 
-    @Test func заметка_в_ленте_с_решёткой_в_одну_строку() {
+    @Test func тап_по_чипу_открывает_поиск_по_тегу() async {
+        let fuel = TagModel.makeTest(name: "Бензин")
+        let entry = EntryModel.makeTest(type: .expense, amount: 100, tags: [fuel])
+        let vm = makeSearchVM(entries: [entry, .makeTest(type: .expense, amount: 50)])
+        await vm.load()
+
+        vm.searchTag(fuel)
+
+        #expect(vm.isSearchActive)
+        #expect(!vm.shouldFocusSearch)
+        #expect(vm.searchQuery == "#Бензин")
+        #expect(vm.filteredEntries.map(\.id) == [entry.id])
+    }
+
+    @Test func заметка_в_ленте_в_кавычках_в_одну_строку() {
         var entry = EntryModel.makeTest(type: .expense, amount: 100)
         #expect(entry.displayNote == nil)
         entry.note = "  "
         #expect(entry.displayNote == nil)
         entry.note = "кофе\nс собой"
-        #expect(entry.displayNote == "#кофе с собой")
+        #expect(entry.displayNote == "\u{201C}кофе с собой\u{201D}")
         entry.note = "#такси"
-        #expect(entry.displayNote == "#такси")
+        #expect(entry.displayNote == "\u{201C}#такси\u{201D}")
     }
 
     // MARK: переход со вкладки «Счета» (§4.5)

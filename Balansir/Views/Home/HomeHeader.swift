@@ -144,7 +144,7 @@ struct HomeHeader: View {
                     .font(.system(size: 17))
                     .foregroundStyle(Theme.Colors.ink2)
 
-                TextField("Category, account or note", text: $viewModel.searchQuery)
+                TextField("Category, account, tag or note", text: $viewModel.searchQuery)
                     .font(Theme.Font.searchField)
                     .foregroundStyle(Theme.Colors.ink)
                     .focused(searchFocus)
