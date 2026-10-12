@@ -399,4 +399,48 @@ struct HomeViewModelTests {
         entry.note = "#такси"
         #expect(entry.displayNote == "#такси")
     }
+
+    // MARK: переход со вкладки «Счета» (§4.5)
+
+    @Test func showAccount_ставит_фильтр_и_не_снимает_его_повторно() {
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let id = UUID()
+        vm.showAccount(id)
+        #expect(vm.selectedAccountId == id)
+        #expect(vm.accountToReveal == id)
+        vm.showAccount(id)
+        #expect(vm.selectedAccountId == id)
+    }
+
+    @Test func showAccount_закрывает_поиск() {
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        vm.isSearchActive = true
+        vm.searchQuery = "кофе"
+        vm.shouldFocusSearch = true
+        vm.showAccount(UUID())
+        #expect(vm.isSearchActive == false)
+        #expect(vm.searchQuery.isEmpty)
+        #expect(vm.shouldFocusSearch == false)
+    }
+
+    @Test func didRevealAccount_сбрасывает_запрос_но_не_фильтр() {
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        let id = UUID()
+        vm.showAccount(id)
+        vm.didRevealAccount()
+        #expect(vm.accountToReveal == nil)
+        #expect(vm.selectedAccountId == id)
+    }
+
+    @Test func load_снимает_фильтр_по_скрытому_счёту() async {
+        let account = AccountModel.makeTest()
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = [account]
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        await vm.load()
+        vm.showAccount(account.id)
+        try? await accountRepo.archive(account.id)
+        await vm.load()
+        #expect(vm.selectedAccountId == nil)
+    }
 }

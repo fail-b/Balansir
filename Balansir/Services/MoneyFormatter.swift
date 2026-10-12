@@ -44,6 +44,11 @@ enum MoneyFormatter {
         return "\(formatted) \(symbol(for: currency))"
     }
 
+    /// Баланс счёта со знаком: отрицательный — с «−» (U+2212), положительный — без «+».
+    static func balance(_ amount: Decimal, currency: String = "RUB") -> String {
+        (amount < 0 ? "\u{2212}" : "") + format(amount, currency: currency)
+    }
+
     /// Компактный формат для карусели счетов (§1): до 999 999 — как `format`;
     /// от 1 млн — «1,2 млн ₽»; от 1 млрд — «1,5 млрд ₽». Знак минуса — U+2212.
     static func compact(_ amount: Decimal, currency: String = "RUB") -> String {

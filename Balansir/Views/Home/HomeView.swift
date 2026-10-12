@@ -25,6 +25,8 @@ struct HomeView: View {
     @State private var scrollPhase: ScrollPhase = .idle
     @State private var pendingClose = false
     @State private var scrollPosition = ScrollPosition(edge: .top)
+    /// Позиция карусели счетов — для прокрутки к счёту при переходе со вкладки «Счета».
+    @State private var chipsPosition = ScrollPosition(idType: UUID.self)
     // Высота hero вместе с верхним отступом — последняя измеренная (в поиске hero нет в раскладке).
     @State private var heroHeight: CGFloat = 0
     // Высота шапки (строка поиска с отступами): по ней решаем, видна ли строка при закрытии.
@@ -58,6 +60,12 @@ struct HomeView: View {
             AddEntryView(viewModel: vm)
         }
         .task { await viewModel.load() }
+        // Переход со вкладки «Счета»: лента — в начало, карусель — к выбранному счёту.
+        .onAppear { revealAccountIfNeeded() }
+        .onChange(of: viewModel.accountToReveal) { _, _ in revealAccountIfNeeded() }
+        .onChange(of: viewModel.isSearchActive) { _, isActive in
+            if !isActive { isSearchFocused = false }
+        }
         .overlay(alignment: .bottom) { undoToast }
         .animation(.snappy, value: viewModel.recentlyDeleted?.id)
         .alert("Ошибка", isPresented: Binding(
@@ -335,7 +343,16 @@ struct HomeView: View {
                 }
             }
             .padding(.horizontal, Theme.Spacing.l)
+            .scrollTargetLayout()
         }
+        .scrollPosition($chipsPosition, anchor: .center)
+    }
+
+    private func revealAccountIfNeeded() {
+        guard let id = viewModel.accountToReveal else { return }
+        scrollPosition.scrollTo(edge: .top)
+        chipsPosition.scrollTo(id: id, anchor: .center)
+        viewModel.didRevealAccount()
     }
 
     // MARK: - Empty State

@@ -64,4 +64,10 @@ struct MoneyFormatterTests {
     @Test func compact_отрицательный_миллион() {
         #expect(MoneyFormatter.compact(-1_500_000) == "\u{2212}1,5 млн ₽")
     }
+
+    @Test func balance_со_знаком_только_для_отрицательных() {
+        #expect(MoneyFormatter.balance(2400) == "2\u{00A0}400 ₽")
+        #expect(MoneyFormatter.balance(-2400) == "\u{2212}2\u{00A0}400 ₽")
+        #expect(MoneyFormatter.balance(0) == "0 ₽")
+    }
 }

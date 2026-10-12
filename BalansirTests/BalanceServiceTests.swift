@@ -51,4 +51,12 @@ struct BalanceServiceTests {
         // 1000 + 500 - 200 - 100 = 1200
         #expect(result[a.id] == 1200)
     }
+
+    @Test func total_суммирует_балансы_счетов() {
+        let a1 = AccountModel.makeTest(name: "A1")
+        let a2 = AccountModel.makeTest(name: "A2")
+        let a3 = AccountModel.makeTest(name: "A3")   // без баланса — 0
+        let total = BalanceService.total(of: [a1, a2, a3], balances: [a1.id: 1000, a2.id: -250])
+        #expect(total == 750)
+    }
 }

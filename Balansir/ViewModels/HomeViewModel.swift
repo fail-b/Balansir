@@ -77,7 +77,26 @@ final class HomeViewModel {
     }
 
     var totalBalance: Decimal {
-        accounts.reduce(Decimal(0)) { $0 + (balances[$1.id] ?? 0) }
+        BalanceService.total(of: accounts, balances: balances)
+    }
+
+    // MARK: - Переход со вкладки «Счета» (§4.5)
+
+    /// Счёт, к которому View прокручивает карусель (и ленту — в начало). View сбрасывает через `didRevealAccount()`.
+    private(set) var accountToReveal: UUID?
+
+    /// Тап по счёту на вкладке «Счета»: фильтр по нему (без переключения, в отличие от тапа по чипу),
+    /// открытый поиск закрывается — иначе фильтр не виден.
+    func showAccount(_ id: UUID) {
+        selectedAccountId = id
+        searchQuery = ""
+        isSearchActive = false
+        shouldFocusSearch = false
+        accountToReveal = id
+    }
+
+    func didRevealAccount() {
+        accountToReveal = nil
     }
 
     /// Название текущего месяца для шапки Главной и сводки таб-бара: «Октябрь».
@@ -191,6 +210,10 @@ final class HomeViewModel {
             categories = cats
             allEntries = entries
             balances = BalanceService.computeBalances(accounts: accs, entries: entries)
+            // Счёт фильтра скрыли на вкладке «Счета» — снимаем фильтр, иначе лента пустая.
+            if let id = selectedAccountId, !accs.contains(where: { $0.id == id }) {
+                selectedAccountId = nil
+            }
 
             let cal = Calendar.current
             let todayStart = cal.startOfDay(for: Date())

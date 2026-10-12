@@ -11,3 +11,10 @@ enum BalanceService {
         return result
     }
 }
+
+extension BalanceService {
+    /// Сумма балансов счетов («Всего на счетах»). Счёт без посчитанного баланса — 0.
+    static func total(of accounts: [AccountModel], balances: [UUID: Decimal]) -> Decimal {
+        accounts.reduce(Decimal(0)) { $0 + (balances[$1.id] ?? 0) }
+    }
+}

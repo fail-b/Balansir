@@ -32,7 +32,7 @@ struct TabBarSummary: View {
             Spacer(minLength: Theme.Spacing.s)
             SummaryColumn(label: "В день", value: MoneyFormatter.format(homeVM.monthDailyAverage), isPrimary: false)
         case .accounts:
-            SummaryColumn(label: "Всего на счетах", value: balanceString(homeVM.totalBalance), isPrimary: true)
+            SummaryColumn(label: "Всего на счетах", value: MoneyFormatter.balance(homeVM.totalBalance), isPrimary: true)
             Spacer(minLength: 0)
         }
     }
@@ -45,9 +45,6 @@ struct TabBarSummary: View {
         "\u{2212}\(MoneyFormatter.format(amount))"
     }
 
-    private func balanceString(_ amount: Decimal) -> String {
-        amount < 0 ? "\u{2212}\(MoneyFormatter.format(amount))" : MoneyFormatter.format(amount)
-    }
 }
 
 /// Колонка сводки: подпись (13, `ink2`) над суммой.

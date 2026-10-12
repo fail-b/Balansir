@@ -10,9 +10,10 @@ final class MockAccountRepository: AccountRepository {
     var accounts: [AccountModel] = []
     var shouldThrow = false
 
+    /// Скрытые счета (как в Core Data) в `fetchAll` не попадают.
     func fetchAll() async throws -> [AccountModel] {
         if shouldThrow { throw NSError(domain: "test", code: 1) }
-        return accounts
+        return accounts.filter { !$0.isArchived }
     }
 
     func save(_ account: AccountModel) async throws {
@@ -26,6 +27,16 @@ final class MockAccountRepository: AccountRepository {
 
     func archive(_ id: UUID) async throws {
         if shouldThrow { throw NSError(domain: "test", code: 1) }
+        setArchived(id, true)
+    }
+
+    func unarchive(_ id: UUID) async throws {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        setArchived(id, false)
+    }
+
+    private func setArchived(_ id: UUID, _ value: Bool) {
+        if let idx = accounts.firstIndex(where: { $0.id == id }) { accounts[idx].isArchived = value }
     }
 }
 
@@ -93,11 +104,17 @@ final class MockEntryRepository: EntryRepository {
 
 @MainActor
 extension AccountModel {
-    static func makeTest(name: String = "Счёт", initialBalance: Decimal = 0) -> AccountModel {
+    static func makeTest(
+        name: String = "Счёт",
+        initialBalance: Decimal = 0,
+        accountType: AccountType = .debit,
+        colorHex: String = "#FF0000",
+        sortOrder: Int32 = 0
+    ) -> AccountModel {
         AccountModel(
             id: UUID(), name: name, initialBalance: initialBalance, currency: "RUB",
-            colorHex: "#FF0000", iconName: "creditcard", accountType: .debit,
-            sortOrder: 0, isArchived: false, createdAt: Date(), updatedAt: Date()
+            colorHex: colorHex, iconName: "creditcard", accountType: accountType,
+            sortOrder: sortOrder, isArchived: false, createdAt: Date(), updatedAt: Date()
         )
     }
 }
