@@ -1,12 +1,11 @@
 import SwiftUI
 
 /// Шапка Главной с двумя состояниями (§4.1.4):
-/// обычное — заголовок месяца + стеклянная капсула (лупа + настройки);
+/// обычное — выбор месяца («Все операции ⌄» / «Август ⌄», системное меню) + стеклянная капсула (лупа + настройки);
 /// поиск — стеклянная строка поиска с фокусом + круглая стеклянная «✕».
 /// Лупа морфится в строку поиска через `GlassEffectContainer` + `glassEffectID`.
 struct HomeHeader: View {
     @Bindable var viewModel: HomeViewModel
-    let monthName: String
     /// Прогресс жеста «потянуть вниз» 0…1 (§4.1.4): растягивает капсулу лупы.
     var pullProgress: CGFloat = 0
     /// Фокус строки поиска (владелец — HomeView, чтобы закрывать поиск тапом/свайпом).
@@ -59,19 +58,9 @@ struct HomeHeader: View {
 
             ZStack {
                 HStack {
-                    Button {} label: {
-                        HStack(spacing: 4) {
-                            Text(monthName)
-                                .font(Theme.Font.screenTitle)
-                                .tracking(Theme.Font.Tracking.screenTitle)
-                                .foregroundStyle(Theme.Colors.ink)
-                            AppIcon.image(named: AppIcon.chevronDown)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Theme.Colors.ink2)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    Spacer()
+                    monthMenu
+                    // Заголовок не заходит под капсулу лупы + настроек.
+                    Spacer(minLength: baseWidth + Theme.Spacing.s)
                 }
                 .opacity(1 - stretch)
 
@@ -82,6 +71,41 @@ struct HomeHeader: View {
             }
         }
         .frame(height: Theme.Size.searchBar)
+    }
+
+    /// Выбор месяца (§4.1): системное меню. Тап — меню открыто, прокрутка свайпом, тап по месяцу;
+    /// долгий тап — провести палец до месяца и отпустить. Порядок фиксированный: «Все операции»,
+    /// затем месяцы от текущего (ближе к пальцу) к ранним.
+    private var monthMenu: some View {
+        Menu {
+            Picker(selection: $viewModel.selectedMonth) {
+                Text("Все операции").tag(Date?.none)
+                Section {
+                    ForEach(viewModel.monthOptions) { option in
+                        Text(option.title).tag(Date?.some(option.start))
+                    }
+                }
+            } label: {
+                EmptyView()
+            }
+            .pickerStyle(.inline)
+        } label: {
+            HStack(spacing: Theme.Size.headerChevronGap) {
+                Text(viewModel.headerTitle)
+                    .font(Theme.Font.screenTitle)
+                    .tracking(Theme.Font.Tracking.screenTitle)
+                    .foregroundStyle(Theme.Colors.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(Theme.Size.headerTitleMinScale)
+                AppIcon.image(named: AppIcon.chevronDown)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.Colors.ink2)
+            }
+            .contentShape(Rectangle())
+        }
+        .menuOrder(.fixed)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Период: \(viewModel.headerTitle)")
     }
 
     private func searchCapsule(width: CGFloat) -> some View {

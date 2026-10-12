@@ -37,6 +37,13 @@ struct CategorySegment: Identifiable {
     var id: String { name }
 }
 
+/// Пункт выбора месяца в шапке Главной: начало месяца + подпись («Октябрь», «Декабрь 2025»).
+struct MonthOption: Identifiable, Hashable {
+    let start: Date
+    let title: String
+    var id: Date { start }
+}
+
 @Observable
 final class HomeViewModel {
     private(set) var accounts: [AccountModel] = []
@@ -47,6 +54,10 @@ final class HomeViewModel {
     private(set) var monthExpense: Decimal = 0
     private(set) var monthIncome: Decimal = 0
     var selectedAccountId: UUID? = nil
+    /// Месяц, выбранный в шапке (начало месяца). nil — «Все операции»: бесконечная лента, hero — текущий месяц.
+    var selectedMonth: Date? = nil
+    /// Начала месяцев для выбора: от месяца первой операции до текущего, от свежих к ранним.
+    private(set) var monthStarts: [Date] = []
     var searchQuery: String = ""
     var isSearchActive: Bool = false
     /// Запрос фокуса на поле поиска (активация жестом): шапка ставит фокус и сбрасывает флаг.
@@ -104,14 +115,70 @@ final class HomeViewModel {
         StatisticsService.monthName(for: Date(), calendar: .current)
     }
 
+    // MARK: - Выбор месяца (§4.1)
+
+    /// Пункты списка месяцев в шапке (без «Все операции» — его добавляет View первым пунктом).
+    var monthOptions: [MonthOption] {
+        let now = Date()
+        return monthStarts.map {
+            MonthOption(start: $0, title: StatisticsService.monthTitle(for: $0, now: now, calendar: .current))
+        }
+    }
+
+    /// Заголовок шапки: выбранный месяц или «Все операции».
+    var headerTitle: String {
+        guard let month = selectedMonth else { return "Все операции" }
+        return StatisticsService.monthTitle(for: month, now: Date(), calendar: .current)
+    }
+
+    /// Месяц сводки hero: выбранный, без фильтра — текущий.
+    private var heroInterval: DateInterval {
+        StatisticsService.monthInterval(containing: selectedMonth ?? Date(), calendar: .current)
+    }
+
+    var heroExpense: Decimal {
+        StatisticsService.total(of: .expense, in: allEntries, interval: heroInterval)
+    }
+
+    var heroIncome: Decimal {
+        StatisticsService.total(of: .income, in: allEntries, interval: heroInterval)
+    }
+
+    /// Подписи hero: без фильтра месяц не виден в шапке («Все операции») — пишем его в подписи.
+    var heroExpenseTitle: String {
+        selectedMonth == nil ? "Расходы за " + currentMonthName.lowercased() : "Расходы"
+    }
+
+    var heroIncomeTitle: String {
+        selectedMonth == nil ? "Доходы за " + currentMonthName.lowercased() : "Доходы"
+    }
+
+    /// Текст пустой ленты (вне поиска) с учётом фильтров счёта и месяца.
+    var emptyFeedMessage: String {
+        let byMonth = selectedMonth != nil && !isSearchActive
+        switch (selectedAccountId != nil, byMonth) {
+        case (true, true): return "По этому счёту в этом месяце операций нет."
+        case (false, true): return "В этом месяце операций нет."
+        case (true, false): return "По этому счёту операций нет."
+        case (false, false): return "Операций пока нет. Нажмите «+», чтобы добавить первую."
+        }
+    }
+
+    // Подходит ли операция под выбранный месяц. В поиске фильтр месяца не действует — ищем по всей истории.
+    private func monthMatches(_ entry: EntryModel) -> Bool {
+        guard !isSearchActive, let month = selectedMonth else { return true }
+        let interval = StatisticsService.monthInterval(containing: month, calendar: .current)
+        return entry.date >= interval.start && entry.date < interval.end
+    }
+
     /// Среднее в день за текущий месяц (сегодняшний день входит в число дней).
     var monthDailyAverage: Decimal {
         StatisticsService.dailyAverage(total: monthExpense, today: Date(), calendar: .current)
     }
 
-    /// Лента с учётом фильтра по счёту (карусель) И поискового запроса.
+    /// Лента с учётом фильтра по счёту (карусель), месяца (шапка) И поискового запроса.
     var filteredEntries: [EntryModel] {
-        let byAccount = allEntries.filter(accountMatches)
+        let byAccount = allEntries.filter { accountMatches($0) && monthMatches($0) }
         var query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         // Заметка в ленте показана как «#заметка» — запрос с «#» ищет так же, как без него.
         if query.hasPrefix("#") { query = String(query.dropFirst()).trimmingCharacters(in: .whitespaces) }
@@ -178,11 +245,11 @@ final class HomeViewModel {
     }
 
     var heroSegments: [CategorySegment] {
-        guard monthExpense > 0 else { return [] }
-        let month = StatisticsService.monthInterval(containing: Date(), calendar: .current)
-        let totals = StatisticsService.expensesByCategory(in: allEntries, interval: month)
+        let expense = heroExpense
+        guard expense > 0 else { return [] }
+        let totals = StatisticsService.expensesByCategory(in: allEntries, interval: heroInterval)
         return totals.prefix(4).map { item in
-            let fraction = NSDecimalNumber(decimal: item.total / monthExpense).doubleValue
+            let fraction = NSDecimalNumber(decimal: item.total / expense).doubleValue
             return CategorySegment(
                 name: item.category?.name ?? "Прочее",
                 colorHex: item.category?.colorHex ?? "#8E8E93",
@@ -223,6 +290,7 @@ final class HomeViewModel {
                 .reduce(0) { $0 + $1.amount }
             monthExpense = StatisticsService.total(of: .expense, in: entries, interval: month)
             monthIncome = StatisticsService.total(of: .income, in: entries, interval: month)
+            monthStarts = StatisticsService.monthStarts(covering: entries.map(\.date), now: Date(), calendar: cal)
         } catch { errorMessage = error.localizedDescription }
     }
 

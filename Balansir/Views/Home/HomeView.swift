@@ -173,7 +173,6 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             HomeHeader(
                 viewModel: viewModel,
-                monthName: viewModel.currentMonthName,
                 pullProgress: pullProgress,
                 searchFocus: $isSearchFocused,
                 onOpenSettings: { showingSettings = true }
@@ -256,20 +255,20 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .lastTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Расходы")
+                        Text(viewModel.heroExpenseTitle)
                             .font(Theme.Font.caption)
                             .foregroundStyle(Theme.Colors.ink2)
-                        Text(MoneyFormatter.format(viewModel.monthExpense))
+                        Text(MoneyFormatter.format(viewModel.heroExpense))
                             .font(Theme.Font.heroAmount)
                             .tracking(Theme.Font.Tracking.heroAmount)
                             .foregroundStyle(Theme.Colors.ink)
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text("Доходы")
+                        Text(viewModel.heroIncomeTitle)
                             .font(Theme.Font.caption)
                             .foregroundStyle(Theme.Colors.ink2)
-                        Text("+\(MoneyFormatter.format(viewModel.monthIncome))")
+                        Text("+\(MoneyFormatter.format(viewModel.heroIncome))")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(Theme.Colors.income)
                     }
@@ -384,9 +383,7 @@ struct HomeView: View {
                         .foregroundStyle(Theme.Colors.ink2)
                 }
             } else {
-                Text(viewModel.selectedAccountId == nil
-                     ? "Операций пока нет. Нажмите «+», чтобы добавить первую."
-                     : "По этому счёту операций нет.")
+                Text(viewModel.emptyFeedMessage)
                     .font(.subheadline)
                     .foregroundStyle(Theme.Colors.ink2)
             }

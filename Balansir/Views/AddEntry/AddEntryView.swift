@@ -117,7 +117,7 @@ struct AddEntryView: View {
 
     private var datePickerSheet: some View {
         NavigationStack {
-            DatePicker("Дата", selection: $viewModel.date, displayedComponents: .date)
+            DatePicker("Дата", selection: $viewModel.date, in: ...viewModel.latestAllowedDate, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .labelsHidden()
                 .environment(\.locale, Locale(identifier: "ru_RU"))

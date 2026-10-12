@@ -31,6 +31,16 @@ final class AddEntryViewModel: Identifiable {
     }
 
     var isEditing: Bool { editingEntry != nil }
+
+    /// Последняя допустимая дата операции — сегодня: операции из будущего пока запрещены
+    /// (иначе в выборе месяца на Главной понадобились бы будущие месяцы).
+    var latestAllowedDate: Date { Date() }
+
+    /// Дата позже сегодняшнего дня.
+    private func isInFuture(_ date: Date, now: Date) -> Bool {
+        let cal = Calendar.current
+        return cal.startOfDay(for: date) > cal.startOfDay(for: now)
+    }
     var amount: Decimal { amountInput.value }
 
     /// Сумма строкой вида «1234.5» — для тестов и предзаполнения.
@@ -137,6 +147,10 @@ final class AddEntryViewModel: Identifiable {
 
     func save() async {
         let now = Date()
+        guard !isInFuture(date, now: now) else {
+            errorMessage = "Дата операции не может быть позже сегодняшнего дня."
+            return
+        }
         let entry = EntryModel(
             id: editingEntry?.id ?? UUID(),
             date: date,

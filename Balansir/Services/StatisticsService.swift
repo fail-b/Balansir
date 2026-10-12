@@ -26,6 +26,31 @@ enum StatisticsService {
         return s.prefix(1).uppercased() + s.dropFirst()
     }
 
+    /// Подпись месяца для выбора в шапке Главной: месяцы года `now` — «Октябрь»,
+    /// других лет — с годом: «Декабрь 2025».
+    static func monthTitle(for date: Date, now: Date, calendar: Calendar, locale: Locale = Locale(identifier: "ru_RU")) -> String {
+        let name = monthName(for: date, calendar: calendar, locale: locale)
+        let year = calendar.component(.year, from: date)
+        guard year != calendar.component(.year, from: now) else { return name }
+        return "\(name) \(year)"
+    }
+
+    /// Начала месяцев от месяца самой ранней даты до месяца `now` включительно, от свежих к ранним.
+    /// Даты позже `now` не расширяют список; без дат — только текущий месяц.
+    static func monthStarts(covering dates: [Date], now: Date, calendar: Calendar) -> [Date] {
+        let current = monthInterval(containing: now, calendar: calendar).start
+        let earliest = dates.min().map { min($0, now) } ?? now
+        let first = monthInterval(containing: earliest, calendar: calendar).start
+        var result: [Date] = []
+        var month = current
+        while month >= first {
+            result.append(month)
+            guard let previous = calendar.date(byAdding: .month, value: -1, to: month) else { break }
+            month = previous
+        }
+        return result
+    }
+
     /// Сумма операций типа `type` внутри интервала.
     static func total(of type: EntryType, in entries: [EntryModel], interval: DateInterval) -> Decimal {
         entries
