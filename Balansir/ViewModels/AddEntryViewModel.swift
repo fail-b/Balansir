@@ -72,7 +72,18 @@ final class AddEntryViewModel: Identifiable {
             let (fetchedAccounts, fetchedCategories, fetchedEntries) = try await (accs, cats, ents)
             accounts = fetchedAccounts
             categories = fetchedCategories
-            balances = BalanceService.computeBalances(accounts: fetchedAccounts, entries: fetchedEntries)
+            // Операцию со скрытым счётом/категорией тоже можно отредактировать: подставляем их
+            // в списки выбора (только для этой операции), иначе выбор пустой и «Сохранить» неактивна.
+            if let entry = editingEntry {
+                for account in [entry.fromAccount, entry.toAccount].compactMap({ $0 })
+                where !accounts.contains(where: { $0.id == account.id }) {
+                    accounts.append(account)
+                }
+                if let category = entry.category, !categories.contains(where: { $0.id == category.id }) {
+                    categories.append(category)
+                }
+            }
+            balances = BalanceService.computeBalances(accounts: accounts, entries: fetchedEntries)
 
             if !hasLoaded {
                 hasLoaded = true

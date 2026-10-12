@@ -227,4 +227,75 @@ struct AddEntryViewModelTests {
 
         #expect(vm.errorMessage != nil)
     }
+
+    // MARK: скрытые категории и счета (§4.5)
+
+    @Test func редактирование_операции_со_скрытой_категорией_можно_сохранить() async {
+        let account = AccountModel.makeTest()
+        let visible = CategoryModel.makeTest(name: "Еда")
+        let hidden = CategoryModel.makeTest(name: "Кафе")
+        let entry = EntryModel.makeTest(type: .expense, amount: 300, from: account, category: hidden)
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = [account]
+        let categoryRepo = MockCategoryRepository()
+        categoryRepo.categories = [visible, hidden]
+        try? await categoryRepo.archive(hidden.id)
+        let entryRepo = MockEntryRepository()
+
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo)
+        await vm.load()
+
+        #expect(vm.selectedCategory?.id == hidden.id)
+        #expect(vm.filteredCategories.map(\.id) == [visible.id, hidden.id])   // видна в выборе, в конце
+        #expect(vm.canSave)
+        await vm.save()
+        #expect(entryRepo.savedCategory?.id == hidden.id)
+    }
+
+    @Test func повторная_загрузка_не_дублирует_скрытую_категорию() async {
+        let account = AccountModel.makeTest()
+        let hidden = CategoryModel.makeTest(name: "Кафе")
+        let entry = EntryModel.makeTest(type: .expense, amount: 300, from: account, category: hidden)
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = [account]
+        let categoryRepo = MockCategoryRepository()
+        categoryRepo.categories = [hidden]
+        try? await categoryRepo.archive(hidden.id)
+
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        await vm.load()
+        await vm.load()
+        #expect(vm.categories.count == 1)
+    }
+
+    @Test func новая_операция_не_показывает_скрытые_категории() async {
+        let account = AccountModel.makeTest()
+        let visible = CategoryModel.makeTest(name: "Еда")
+        let hidden = CategoryModel.makeTest(name: "Кафе")
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = [account]
+        let categoryRepo = MockCategoryRepository()
+        categoryRepo.categories = [hidden, visible]
+        try? await categoryRepo.archive(hidden.id)
+
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        await vm.load()
+        #expect(vm.filteredCategories.map(\.id) == [visible.id])
+        #expect(vm.selectedCategory?.id == visible.id)
+    }
+
+    @Test func редактирование_перевода_со_скрытым_счётом_можно_сохранить() async {
+        let from = AccountModel.makeTest(name: "Карта")
+        let to = AccountModel.makeTest(name: "Старый вклад")
+        let entry = EntryModel.makeTest(type: .transfer, amount: 1000, from: from, to: to)
+        let accountRepo = MockAccountRepository()
+        accountRepo.accounts = [from, to]
+        try? await accountRepo.archive(to.id)
+
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository())
+        await vm.load()
+        #expect(vm.selectedAccount?.id == from.id)
+        #expect(vm.selectedToAccount?.id == to.id)
+        #expect(vm.canSave)
+    }
 }
