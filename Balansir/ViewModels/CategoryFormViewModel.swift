@@ -31,8 +31,9 @@ final class CategoryFormViewModel {
             if let existing = editingCategory {
                 sortOrder = existing.sortOrder
             } else {
+                // В конец списка: max + 1 (count даёт дубли после скрытия категорий).
                 let all = try await categoryRepo.fetchAll()
-                sortOrder = Int32(all.count)
+                sortOrder = (all.map(\.sortOrder).max() ?? -1) + 1
             }
             let model = CategoryModel(
                 id: editingCategory?.id ?? UUID(),

@@ -33,14 +33,34 @@ struct CategoryFormViewModelTests {
         #expect(vm.selectedIcon == "car")
     }
 
-    @Test func save_новая_категория_sortOrder_равен_количеству_существующих() async {
+    @Test func save_новая_категория_в_конец_списка() async {
         let repo = MockCategoryRepository()
-        repo.categories = [.makeTest(name: "A"), .makeTest(name: "B"), .makeTest(name: "C")]
+        repo.categories = [.makeTest(name: "A", sortOrder: 0), .makeTest(name: "B", sortOrder: 1), .makeTest(name: "C", sortOrder: 2)]
         let vm = CategoryFormViewModel(categoryRepo: repo)
         vm.name = "Новая"
         await vm.save()
         #expect(vm.errorMessage == nil)
         #expect(repo.savedCategory?.sortOrder == 3)
+    }
+
+    @Test func save_после_скрытия_sortOrder_не_дублируется() async {
+        // Скрыли B (sortOrder 1): осталось 2 категории, но новая должна встать после C (2), а не на 2.
+        let b = CategoryModel.makeTest(name: "B", sortOrder: 1)
+        let repo = MockCategoryRepository()
+        repo.categories = [.makeTest(name: "A", sortOrder: 0), b, .makeTest(name: "C", sortOrder: 2)]
+        try? await repo.archive(b.id)
+        let vm = CategoryFormViewModel(categoryRepo: repo)
+        vm.name = "Новая"
+        await vm.save()
+        #expect(repo.savedCategory?.sortOrder == 3)
+    }
+
+    @Test func save_первая_категория_sortOrder_0() async {
+        let repo = MockCategoryRepository()
+        let vm = CategoryFormViewModel(categoryRepo: repo)
+        vm.name = "Первая"
+        await vm.save()
+        #expect(repo.savedCategory?.sortOrder == 0)
     }
 
     @Test func save_редактирование_сохраняет_sortOrder() async {
