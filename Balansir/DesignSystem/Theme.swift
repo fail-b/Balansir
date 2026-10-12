@@ -25,6 +25,11 @@ enum Theme {
         static let shadow = Color("Colors/shadow")
         /// Белый текст/иконка на цветной заливке (напр. кнопка «Удалить»)
         static let onColor = Color("Colors/onColor")
+        // Экран запуска (`BalansirSplashCoinView`). `splashBackground` также указан
+        // в Info.plist (UILaunchScreen → UIColorName) — переименовывать вместе с ним.
+        static let splashBackground = Color("Colors/splashBackground")
+        static let splashMark = Color("Colors/splashMark")
+        static let splashText = Color("Colors/splashText")
     }
 
     /// Мягкая тень плавающих стеклянных элементов (таб-бар).
@@ -131,6 +136,53 @@ enum Theme {
         static let demoShadowY: CGFloat = 8
     }
 
+    /// Анимация запуска «Монета» `BalansirSplashCoinView` (от дизайнера, 2026-10-12), ~1,5 с.
+    enum Splash {
+        /// Диаметр знака (монеты).
+        static let markDiameter: CGFloat = 92
+        /// Зазор между половинками знака — доля диаметра (60/520 по мастеру иконки 1024).
+        static let markGapRatio: CGFloat = 60 / 520
+        /// Прозрачность нижней половинки знака.
+        static let lowerHalfOpacity: Double = 0.5
+        /// Зазор между знаком и словом «balansir».
+        static let wordmarkSpacing: CGFloat = 24
+        /// Межбуквенный интервал слова: −0,035 em при кегле 40.
+        static let wordmarkTracking: CGFloat = -1.4
+        /// Слово выезжает снизу на столько pt.
+        static let wordmarkRise: CGFloat = 12
+        /// Высота, с которой падает монета.
+        static let dropHeight: CGFloat = 560
+        /// Переворот монеты вокруг вертикальной оси: угол (два оборота) и перспектива.
+        static let spinDegrees: Double = 720
+        static let spinPerspective: CGFloat = 0.4
+        /// Маленькие монетки, влетающие в знак: размер, стартовые смещения от центра,
+        /// точка, в которой они исчезают, и масштаб в ней.
+        static let dotSize: CGFloat = 14
+        static let dotStarts: [CGSize] = [
+            CGSize(width: -130, height: -150),
+            CGSize(width: 140, height: -40),
+            CGSize(width: -115, height: 120)
+        ]
+        static let dotTarget = CGSize(width: 0, height: 30)
+        static let dotDepositScale: CGFloat = 0.4
+        /// Задержка между монетками, с.
+        static let dotStagger: Double = 0.08
+        // Анимации шагов
+        static let dropAnimation = SwiftUI.Animation.spring(response: 0.42, dampingFraction: 0.6)
+        static let spinAnimation = SwiftUI.Animation.timingCurve(0.45, 0, 0.25, 1, duration: 0.52)
+        static let dotAppearAnimation = SwiftUI.Animation.spring(response: 0.3, dampingFraction: 0.6)
+        static let dotDepositAnimation = SwiftUI.Animation.easeIn(duration: 0.34)
+        static let splitAnimation = SwiftUI.Animation.spring(response: 0.48, dampingFraction: 0.6)
+        static let wordmarkAnimation = SwiftUI.Animation.easeOut(duration: 0.34)
+        /// Паузы после шагов, мс: падение → переворот → разделение → слово → конец.
+        static let dropPause = 400
+        static let spinPause = 520
+        static let splitPause = 260
+        static let wordmarkPause = 360
+        /// Растворение сплэша при переходе в приложение.
+        static let dismissAnimation = SwiftUI.Animation.easeOut(duration: 0.25)
+    }
+
     /// Самописная цифровая клавиатура `NumpadView` (§4.6, §4.7).
     enum Numpad {
         static let keyHeight: CGFloat = 52
@@ -209,6 +261,9 @@ enum Theme {
         static let toastAction = SwiftUI.Font.system(size: 15, weight: .semibold)
         /// Название приложения на первом шаге онбординга (§4.9).
         static let onboardingBrand = SwiftUI.Font.system(size: 40, weight: .bold)
+        /// Слово «balansir» на экране запуска — фирменный шрифт Onest SemiBold
+        /// (`Resources/Fonts`, Info.plist → UIAppFonts). Размер фиксированный: логотип не растёт с Dynamic Type.
+        static let splashWordmark = SwiftUI.Font.custom("Onest-SemiBold", fixedSize: 40)
         /// Подпись версии внизу Настроек (§4.8).
         static let appVersion = SwiftUI.Font.system(size: 12)
         static let searchField = SwiftUI.Font.system(size: 17)

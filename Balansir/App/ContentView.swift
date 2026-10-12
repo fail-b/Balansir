@@ -19,10 +19,14 @@ struct ContentView: View {
     /// Онбординг (§4.9): `false` — показать (первый запуск или «Показать приветствие» в Настройках).
     @AppStorage(AppSettingsKey.hasSeenOnboarding) private var hasSeenOnboarding = false
     @State private var onboardingVM: OnboardingViewModel?
+    /// Сплэш запуска закрылся (`RootView`). До этого онбординг не показываем — он накрыл бы анимацию.
+    private let isLaunchFinished: Bool
 
     init(accountRepo: any AccountRepository,
          categoryRepo: any CategoryRepository,
-         entryRepo: any EntryRepository) {
+         entryRepo: any EntryRepository,
+         isLaunchFinished: Bool = true) {
+        self.isLaunchFinished = isLaunchFinished
         _homeVM = State(wrappedValue: HomeViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
         _statisticsVM = State(wrappedValue: StatisticsViewModel(entryRepo: entryRepo))
         _accountsVM = State(wrappedValue: AccountsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
@@ -80,7 +84,10 @@ struct ContentView: View {
         }) { vm in
             OnboardingView(viewModel: vm)
         }
-        .task { await showOnboardingIfNeeded() }
+        .task(id: isLaunchFinished) {
+            guard isLaunchFinished else { return }
+            await showOnboardingIfNeeded()
+        }
         // «Показать приветствие» в Настройках сбрасывает флаг — показываем сразу, без проверки данных.
         .onChange(of: hasSeenOnboarding) { _, seen in
             if !seen, onboardingVM == nil { onboardingVM = homeVM.makeOnboardingViewModel() }
